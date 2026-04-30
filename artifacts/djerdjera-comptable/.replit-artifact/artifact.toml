@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "DJERDJERA Comptable"
+version = "1.0.0"
+id = "artifacts/djerdjera-comptable"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22192
+
+[services.development]
+run = "pnpm --filter @workspace/djerdjera-comptable run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/djerdjera-comptable", "run", "build" ]
+publicDir = "artifacts/djerdjera-comptable/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22192"
+BASE_PATH = "/"

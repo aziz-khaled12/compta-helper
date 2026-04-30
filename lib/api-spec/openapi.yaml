@@ -3,34 +3,663 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: DJERDJERA Comptable API - Algerian small-business accounting
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: company
+  - name: assets
+  - name: transactions
+  - name: inventory
+  - name: employees
+  - name: payroll
+  - name: dashboard
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  # ============ COMPANY ============
+  /company:
+    get:
+      operationId: getCompany
+      tags: [company]
+      summary: Get the active company profile (single tenant)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Company" }
+    put:
+      operationId: upsertCompany
+      tags: [company]
+      summary: Create or update the company profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompanyInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Company" }
+
+  /company/funding:
+    get:
+      operationId: listFunding
+      tags: [company]
+      summary: List capital funding entries (own funds + bank loans)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: array
+                items: { $ref: "#/components/schemas/FundingEntry" }
+    post:
+      operationId: createFunding
+      tags: [company]
+      summary: Add a funding source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FundingInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FundingEntry" }
+  /company/funding/{id}:
+    delete:
+      operationId: deleteFunding
+      tags: [company]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+
+  # ============ FIXED ASSETS ============
+  /assets:
+    get:
+      operationId: listAssets
+      tags: [assets]
+      summary: List fixed assets (equipment) with computed depreciation
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FixedAsset" }
+    post:
+      operationId: createAsset
+      tags: [assets]
+      summary: Register a fixed asset (auto-generates monthly amortization log)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FixedAssetInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FixedAsset" }
+  /assets/{id}:
+    delete:
+      operationId: deleteAsset
+      tags: [assets]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+  /assets/{id}/amortization:
+    get:
+      operationId: getAssetAmortization
+      tags: [assets]
+      summary: Monthly amortization schedule for an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AmortizationEntry" }
+
+  # ============ TRANSACTIONS (JOURNAL) ============
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      summary: List journal entries
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [SALE, PURCHASE, EXPENSE]
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Transaction" }
+    post:
+      operationId: createTransaction
+      tags: [transactions]
+      summary: Record a sale, purchase, or expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+  /transactions/{id}:
+    delete:
+      operationId: deleteTransaction
+      tags: [transactions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+
+  # ============ INVENTORY ============
+  /inventory/items:
+    get:
+      operationId: listInventoryItems
+      tags: [inventory]
+      summary: List inventory items with current balance
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/InventoryItem" }
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      summary: Create an inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryItemInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryItem" }
+  /inventory/items/{id}:
+    delete:
+      operationId: deleteInventoryItem
+      tags: [inventory]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+
+  /inventory/movements:
+    get:
+      operationId: listInventoryMovements
+      tags: [inventory]
+      summary: List stock movements (in/out)
+      parameters:
+        - name: itemId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/InventoryMovement" }
+    post:
+      operationId: createInventoryMovement
+      tags: [inventory]
+      summary: Record a stock movement (consumption, production)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryMovementInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryMovement" }
+
+  # ============ EMPLOYEES ============
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List employees
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Employee" }
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Add an employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmployeeInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Employee" }
+  /employees/{id}:
+    delete:
+      operationId: deleteEmployee
+      tags: [employees]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+
+  # ============ PAYROLL ============
+  /payrolls:
+    get:
+      operationId: listPayrolls
+      tags: [payroll]
+      summary: List generated payslips
+      parameters:
+        - name: monthYear
+          in: query
+          required: false
+          schema: { type: string, description: "YYYY-MM" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Payroll" }
+    post:
+      operationId: generatePayroll
+      tags: [payroll]
+      summary: Generate a payslip for an employee for a given month (auto-computes CNAS 9% + IRG)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PayrollInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payroll" }
+  /payrolls/{id}:
+    delete:
+      operationId: deletePayroll
+      tags: [payroll]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+
+  # ============ DASHBOARD (WOW endpoints) ============
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Top-level financial KPIs (revenue, expenses, TVA balance, profit, cash position)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+  /dashboard/monthly-pnl:
+    get:
+      operationId: getMonthlyPnl
+      tags: [dashboard]
+      summary: Monthly profit and loss for the last 12 months
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MonthlyPnlEntry" }
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent journal entries across all types
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Transaction" }
+  /dashboard/tva:
+    get:
+      operationId: getTvaSummary
+      tags: [dashboard]
+      summary: TVA collectée vs déductible (and net to declare)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TvaSummary" }
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
 
+    Company:
+      type: object
+      required: [id, name, nif, ai, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        nif: { type: string, description: "Numéro d'Identification Fiscale" }
+        ai: { type: string, description: "Article d'Imposition" }
+        address: { type: string, nullable: true }
+        legalForm: { type: string, nullable: true, description: "e.g. EURL, SARL, SNC" }
+        createdAt: { type: string, format: date-time }
+    CompanyInput:
+      type: object
+      required: [name, nif, ai]
+      properties:
+        name: { type: string, minLength: 1 }
+        nif: { type: string, minLength: 1 }
+        ai: { type: string, minLength: 1 }
+        address: { type: string, nullable: true }
+        legalForm: { type: string, nullable: true }
+
+    FundingEntry:
+      type: object
+      required: [id, source, amount, date]
+      properties:
+        id: { type: string, format: uuid }
+        source: { type: string, enum: [OWN_FUNDS, BANK_LOAN] }
+        label: { type: string, nullable: true }
+        amount: { type: number }
+        date: { type: string, format: date }
+        interestRate: { type: number, nullable: true, description: "Annual rate for loans (e.g. 6.5)" }
+        durationMonths: { type: integer, nullable: true }
+    FundingInput:
+      type: object
+      required: [source, amount, date]
+      properties:
+        source: { type: string, enum: [OWN_FUNDS, BANK_LOAN] }
+        label: { type: string, nullable: true }
+        amount: { type: number, minimum: 0 }
+        date: { type: string, format: date }
+        interestRate: { type: number, nullable: true }
+        durationMonths: { type: integer, nullable: true }
+
+    FixedAsset:
+      type: object
+      required: [id, label, costHt, purchaseDate, lifeYears, residualValue, monthlyDepreciation, accumulatedDepreciation, bookValue]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        category: { type: string, nullable: true, description: "e.g. Industrial Equipment, Vehicle, Computer" }
+        costHt: { type: number }
+        purchaseDate: { type: string, format: date }
+        lifeYears: { type: integer }
+        residualValue: { type: number }
+        monthlyDepreciation: { type: number }
+        accumulatedDepreciation: { type: number }
+        bookValue: { type: number }
+    FixedAssetInput:
+      type: object
+      required: [label, costHt, purchaseDate, lifeYears]
+      properties:
+        label: { type: string, minLength: 1 }
+        category: { type: string, nullable: true }
+        costHt: { type: number, minimum: 0 }
+        purchaseDate: { type: string, format: date }
+        lifeYears: { type: integer, minimum: 1, maximum: 50 }
+        residualValue: { type: number, minimum: 0, default: 0 }
+
+    AmortizationEntry:
+      type: object
+      required: [id, date, amount]
+      properties:
+        id: { type: string, format: uuid }
+        assetId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        amount: { type: number }
+
+    Transaction:
+      type: object
+      required: [id, date, type, label, amountHt, tvaRate, tvaAmount, amountTtc, paymentMethod, status]
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        type: { type: string, enum: [SALE, PURCHASE, EXPENSE] }
+        label: { type: string }
+        amountHt: { type: number }
+        tvaRate: { type: number }
+        tvaAmount: { type: number }
+        amountTtc: { type: number }
+        paymentMethod: { type: string, enum: [CASH, BANK, CREDIT] }
+        status: { type: string, enum: [PAID, UNPAID, PARTIAL] }
+        thirdParty: { type: string, nullable: true, description: "Customer or supplier name" }
+        category: { type: string, nullable: true, description: "e.g. RENT, ELECTRICITY, SUPPLIES, RAW_MATERIALS" }
+    TransactionInput:
+      type: object
+      required: [date, type, label, amountHt, tvaRate, paymentMethod, status]
+      properties:
+        date: { type: string, format: date }
+        type: { type: string, enum: [SALE, PURCHASE, EXPENSE] }
+        label: { type: string, minLength: 1 }
+        amountHt: { type: number, minimum: 0 }
+        tvaRate: { type: number, minimum: 0, maximum: 100 }
+        paymentMethod: { type: string, enum: [CASH, BANK, CREDIT] }
+        status: { type: string, enum: [PAID, UNPAID, PARTIAL] }
+        thirdParty: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+
+    InventoryItem:
+      type: object
+      required: [id, name, category, balance, averageCost, totalValue]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        category: { type: string, enum: [RAW_MATERIAL, FINISHED_GOOD, SUPPLY] }
+        unit: { type: string, nullable: true, description: "e.g. kg, L, unit" }
+        balance: { type: number }
+        averageCost: { type: number }
+        totalValue: { type: number }
+    InventoryItemInput:
+      type: object
+      required: [name, category]
+      properties:
+        name: { type: string, minLength: 1 }
+        category: { type: string, enum: [RAW_MATERIAL, FINISHED_GOOD, SUPPLY] }
+        unit: { type: string, nullable: true }
+
+    InventoryMovement:
+      type: object
+      required: [id, itemId, itemName, date, quantity, direction, unitCostHt]
+      properties:
+        id: { type: string, format: uuid }
+        itemId: { type: string, format: uuid }
+        itemName: { type: string }
+        date: { type: string, format: date }
+        quantity: { type: number }
+        direction: { type: string, enum: [IN, OUT] }
+        unitCostHt: { type: number }
+        note: { type: string, nullable: true }
+    InventoryMovementInput:
+      type: object
+      required: [itemId, date, quantity, direction, unitCostHt]
+      properties:
+        itemId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        quantity: { type: number, minimum: 0 }
+        direction: { type: string, enum: [IN, OUT] }
+        unitCostHt: { type: number, minimum: 0 }
+        note: { type: string, nullable: true }
+
+    Employee:
+      type: object
+      required: [id, fullName, familySituation, baseSalary, hireDate]
+      properties:
+        id: { type: string, format: uuid }
+        fullName: { type: string }
+        position: { type: string, nullable: true }
+        familySituation: { type: string, enum: [SINGLE, MARRIED, MARRIED_1_CHILD, MARRIED_2_CHILDREN, MARRIED_3_CHILDREN, MARRIED_4_PLUS_CHILDREN] }
+        baseSalary: { type: number }
+        experienceYears: { type: integer, default: 0 }
+        hireDate: { type: string, format: date }
+    EmployeeInput:
+      type: object
+      required: [fullName, familySituation, baseSalary, hireDate]
+      properties:
+        fullName: { type: string, minLength: 1 }
+        position: { type: string, nullable: true }
+        familySituation: { type: string, enum: [SINGLE, MARRIED, MARRIED_1_CHILD, MARRIED_2_CHILDREN, MARRIED_3_CHILDREN, MARRIED_4_PLUS_CHILDREN] }
+        baseSalary: { type: number, minimum: 0 }
+        experienceYears: { type: integer, minimum: 0, default: 0 }
+        hireDate: { type: string, format: date }
+
+    Payroll:
+      type: object
+      required: [id, employeeId, employeeName, monthYear, baseSalary, experienceBonus, grossSalary, cnasDeduction, taxableBase, irgDeduction, netToPay, generatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        employeeId: { type: string, format: uuid }
+        employeeName: { type: string }
+        monthYear: { type: string, description: "YYYY-MM" }
+        baseSalary: { type: number }
+        experienceBonus: { type: number }
+        grossSalary: { type: number }
+        cnasDeduction: { type: number, description: "9% Social Security" }
+        taxableBase: { type: number }
+        irgDeduction: { type: number, description: "Algerian IRG scale" }
+        netToPay: { type: number }
+        generatedAt: { type: string, format: date-time }
+    PayrollInput:
+      type: object
+      required: [employeeId, monthYear]
+      properties:
+        employeeId: { type: string, format: uuid }
+        monthYear: { type: string, description: "YYYY-MM" }
+        bonus: { type: number, default: 0 }
+
+    DashboardSummary:
+      type: object
+      required: [totalRevenueHt, totalPurchasesHt, totalExpensesHt, tvaCollectee, tvaDeductible, tvaNet, grossProfit, netProfit, totalAssetsValue, totalEmployees, totalPayrollMonth, cashPosition]
+      properties:
+        totalRevenueHt: { type: number }
+        totalPurchasesHt: { type: number }
+        totalExpensesHt: { type: number }
+        tvaCollectee: { type: number }
+        tvaDeductible: { type: number }
+        tvaNet: { type: number, description: "TVA Collectée - TVA Déductible (positive = to pay, negative = credit)" }
+        grossProfit: { type: number }
+        netProfit: { type: number }
+        totalAssetsValue: { type: number, description: "Net book value across all fixed assets" }
+        totalEmployees: { type: integer }
+        totalPayrollMonth: { type: number, description: "Total net payroll for current month" }
+        cashPosition: { type: number, description: "Funding + paid sales - paid purchases - paid expenses - paid payroll" }
+
+    MonthlyPnlEntry:
+      type: object
+      required: [monthYear, revenue, expenses, profit]
+      properties:
+        monthYear: { type: string }
+        revenue: { type: number }
+        expenses: { type: number }
+        profit: { type: number }
+
+    TvaSummary:
+      type: object
+      required: [period, tvaCollectee, tvaDeductible, net]
+      properties:
+        period: { type: string }
+        tvaCollectee: { type: number }
+        tvaDeductible: { type: number }
+        net: { type: number }
