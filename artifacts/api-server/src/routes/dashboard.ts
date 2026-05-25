@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, gte } from "drizzle-orm";
 import {
   db,
   transactionsTable,
@@ -7,6 +7,8 @@ import {
   fixedAssetsTable,
   employeesTable,
   payrollsTable,
+  inventoryItemsTable,
+  inventoryMovementsTable,
 } from "@workspace/db";
 import {
   GetDashboardSummaryResponse,
@@ -32,6 +34,9 @@ function emptySummary() {
     totalEmployees: 0,
     totalPayrollMonth: 0,
     cashPosition: 0,
+    totalStockValue: 0,
+    totalStockItems: 0,
+    recentMovementsCount: 0,
   };
 }
 
@@ -142,6 +147,48 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
     summary.totalExpensesHt -
     amortizationExpense -
     summary.totalPayrollMonth;
+
+  // Stock totals
+  const stockItems = await db
+    .select()
+    .from(inventoryItemsTable)
+    .where(eq(inventoryItemsTable.companyId, companyId));
+
+  summary.totalStockItems = stockItems.length;
+
+  if (stockItems.length > 0) {
+    const itemIds = stockItems.map((i) => i.id);
+    const movements = await db
+      .select()
+      .from(inventoryMovementsTable)
+      .where(inArray(inventoryMovementsTable.itemId, itemIds));
+
+    // Weighted-average cost per item → total stock value
+    const balanceMap = new Map<string, { qty: number; totalValue: number }>();
+    for (const m of movements) {
+      const cur = balanceMap.get(m.itemId) ?? { qty: 0, totalValue: 0 };
+      const q = Number(m.quantity);
+      const cost = Number(m.unitCostHt);
+      if (m.direction === "IN") {
+        cur.qty += q;
+        cur.totalValue += q * cost;
+      } else {
+        cur.qty -= q;
+        cur.totalValue -= q * cost;
+      }
+      balanceMap.set(m.itemId, cur);
+    }
+    for (const b of balanceMap.values()) {
+      summary.totalStockValue += Math.max(0, b.totalValue);
+    }
+
+    // Recent movements: last 30 days
+    const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    summary.recentMovementsCount = movements.filter(
+      (m) => m.date >= cutoffStr,
+    ).length;
+  }
 
   res.json(GetDashboardSummaryResponse.parse(summary));
 });

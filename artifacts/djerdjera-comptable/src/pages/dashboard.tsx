@@ -8,6 +8,8 @@ import {
   useGetMonthlyPnl,
   useGetRecentActivity,
   useGetTvaSummary,
+  useListInventoryItems,
+  useListInventoryMovements,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +34,9 @@ import {
   Users,
   ArrowUpRight,
   ArrowDownRight,
-  Activity
+  Activity,
+  Package,
+  MoveHorizontal
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -225,7 +229,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -264,7 +268,110 @@ export default function Dashboard() {
             <Link href="/payroll" className="text-xs text-primary hover:underline mt-2 inline-block">Aller à la paie</Link>
           </CardContent>
         </Card>
+
+        <Card className="bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Valeur du Stock
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatMoney(summary?.totalStockValue)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {summary?.totalStockItems || 0} référence{(summary?.totalStockItems || 0) !== 1 ? "s" : ""}
+            </p>
+            <Link href="/inventory" className="text-xs text-primary hover:underline mt-1 inline-block">Gérer les stocks</Link>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Stock movements preview */}
+      <Card className="bg-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MoveHorizontal className="h-5 w-5 text-primary" />
+                Mouvements de Stock Récents
+              </CardTitle>
+              <CardDescription className="mt-1">
+                {summary?.recentMovementsCount || 0} mouvement{(summary?.recentMovementsCount || 0) !== 1 ? "s" : ""} au cours des 30 derniers jours
+              </CardDescription>
+            </div>
+            <Link href="/inventory">
+              <Button variant="outline" size="sm">Voir les stocks</Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <StockMovementsPreview />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function StockMovementsPreview() {
+  const { data: items } = useListInventoryItems();
+  const { data: movements, isLoading } = useListInventoryMovements();
+
+  const nameById = new Map<string, string>(
+    (items ?? []).map((i) => [i.id, i.name] as [string, string])
+  );
+
+  const recent = (movements ?? []).slice(0, 8);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (recent.length === 0) {
+    return (
+      <div className="text-center py-6 text-muted-foreground text-sm">
+        Aucun mouvement enregistré. Commencez par ajouter des articles en stock.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {recent.map((m) => {
+        const isIn = m.direction === "IN";
+        const itemName: string = nameById.get(m.itemId) ?? "Article";
+        const value = m.quantity * m.unitCostHt;
+        const dateStr = String(m.date).slice(0, 10);
+        return (
+          <div
+            key={m.id}
+            className="flex items-center justify-between p-3 rounded-lg border bg-background/50 hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`shrink-0 p-2 rounded-full ${isIn ? "bg-emerald-100 text-emerald-600" : "bg-orange-100 text-orange-600"}`}>
+                {isIn ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{itemName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {isIn ? "Entrée" : "Sortie"} · {m.quantity} unité{m.quantity !== 1 ? "s" : ""} · {dateStr}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0 ml-4 text-right">
+              <p className={`text-sm font-semibold ${isIn ? "text-emerald-600" : "text-orange-600"}`}>
+                {isIn ? "+" : "-"}{formatMoney(value)}
+              </p>
+              <p className="text-xs text-muted-foreground">{formatMoney(m.unitCostHt)}/u</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -358,6 +358,12 @@ export interface DashboardSummary {
   totalPayrollMonth: number;
   /** Funding + paid sales - paid purchases - paid expenses - paid payroll */
   cashPosition: number;
+  /** Weighted-average total value of all inventory items */
+  totalStockValue: number;
+  /** Number of distinct stock items */
+  totalStockItems: number;
+  /** Number of inventory movements in the last 30 days */
+  recentMovementsCount: number;
 }
 
 export interface MonthlyPnlEntry {

@@ -399,6 +399,13 @@ export const GetDashboardSummaryResponse = zod.object({
     .describe(
       "Funding + paid sales - paid purchases - paid expenses - paid payroll",
     ),
+  totalStockValue: zod
+    .number()
+    .describe("Weighted-average total value of all inventory items"),
+  totalStockItems: zod.number().describe("Number of distinct stock items"),
+  recentMovementsCount: zod
+    .number()
+    .describe("Number of inventory movements in the last 30 days"),
 });
 
 /**

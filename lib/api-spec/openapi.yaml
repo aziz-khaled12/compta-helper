@@ -631,7 +631,7 @@ components:
 
     DashboardSummary:
       type: object
-      required: [totalRevenueHt, totalPurchasesHt, totalExpensesHt, tvaCollectee, tvaDeductible, tvaNet, grossProfit, netProfit, totalAssetsValue, totalEmployees, totalPayrollMonth, cashPosition]
+      required: [totalRevenueHt, totalPurchasesHt, totalExpensesHt, tvaCollectee, tvaDeductible, tvaNet, grossProfit, netProfit, totalAssetsValue, totalEmployees, totalPayrollMonth, cashPosition, totalStockValue, totalStockItems, recentMovementsCount]
       properties:
         totalRevenueHt: { type: number }
         totalPurchasesHt: { type: number }
@@ -645,6 +645,9 @@ components:
         totalEmployees: { type: integer }
         totalPayrollMonth: { type: number, description: "Total net payroll for current month" }
         cashPosition: { type: number, description: "Funding + paid sales - paid purchases - paid expenses - paid payroll" }
+        totalStockValue: { type: number, description: "Weighted-average total value of all inventory items" }
+        totalStockItems: { type: integer, description: "Number of distinct stock items" }
+        recentMovementsCount: { type: integer, description: "Number of inventory movements in the last 30 days" }
 
     MonthlyPnlEntry:
       type: object
