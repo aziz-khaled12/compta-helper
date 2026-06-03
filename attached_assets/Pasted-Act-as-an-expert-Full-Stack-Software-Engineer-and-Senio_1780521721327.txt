@@ -1,0 +1,82 @@
+Act as an expert Full-Stack Software Engineer and Senior Accountant specializing in Algerian Corporate Law and the Financial Accounting System (SCF). 
+
+I am building a web-based accounting application for small businesses in Algeria operating under simplified accounting regimes (Comptabilité Financière Simplifiée). I need you to create a dedicated, highly professional "Reports" page.
+
+### 1. PAGE OVERVIEW & UI REQUIREMENTS
+- The user must be able to select a report from a dropdown menu, select a specific date range (Month/Year), and view a cleanly formatted dynamic data table.
+- Add an "Export" action block with two buttons: "Export as PDF" and "Export as Excel" (.xlsx). 
+- PDF exports must feature a professional header block: Company Name, Fiscal Year, and "Generated on [Date]".
+- Numeric amounts must be strictly formatted according to standard financial representation (e.g., 2,700,000.00 DA).
+
+### 2. CORE REPORT SCHEMAS TO IMPLEMENT
+Please implement the following 8 standardized reporting tables exactly as specified below:
+
+#### Report 1: Cash Ledger (حساب الصندوق - Caisse)
+Track all physical cash operations.
+- Columns: Date | Libellé | Référence | Encaissement (+) | Décaissement (-) | Solde | Observation
+- Logic: Solde updates chronologically: New Solde = Previous Solde + Encaissement - Décaissement. 
+- Summary Row: Total Encaissements, Total Décaissements, Final Closing Solde.
+
+#### Report 2: Bank Ledger (حساب البنك - Banque)
+Track bank transactions and cheque clearances.
+- Columns: Date | Libellé | Référence | Encaissement (+) | Décaissement (-) | Solde | Observation
+- Logic: New Solde = Previous Solde + Encaissement - Décaissement.
+- Summary Row: Total Bank Inflows, Total Outflows, Final Bank Balance.
+
+#### Report 3: Inventory Ledger (حساب المخزونات - Stocks)
+Track Raw Materials (Matières Premières), Supplies (Fournitures), and Finished Goods (Produits Finis).
+- Columns: Date | Libellé | Référence | Entrée (+) | Sortie (-) | Solde | Observation
+- Logic: Tracks stock movements in value. Dynamic evaluation of standard inventory states.
+
+#### Report 4: Purchases & Suppliers Ledger (حساب المشتريات والموردين - Achats et Fournisseurs)
+Crucial for tracking vendor liabilities and deductible VAT.
+- Columns: Date | Libellé | Référence | Montant HT | TVA Déductible (19%) | Montant TTC | Versements | Reste à Payer
+- Logic: 
+  * Montant TTC = Montant HT + TVA Déductible
+  * Reste à Payer = Montant TTC - Versements
+- Summary Row: Totals for HT, TVA, TTC, Paid, and Outstanding Payables.
+
+#### Report 5: Sales & Customers Ledger (حساب المبيعات والزبائن - Ventes et Clients)
+Track revenue generation and customer receivables.
+- Columns: Date | Libellé | Référence | Montant HT | TVA Collectée (19%) | Montant TTC | Versements | Reste à Payer
+- Logic:
+  * Montant TTC = Montant HT + TVA Collectée
+  * Reste à Payer = Montant TTC - Versements
+- Summary Row: Totals for Sales HT, Collected VAT, Total Receivables, Collected Payments, and Outstanding Balances.
+
+#### Report 6: Operating Expenses Ledger (حساب المصاريف الأخرى - Autres Charges)
+Consolidates operational spending, payroll, social charges (CNAS/IRG), utilities, and monthly asset depreciation.
+- Columns: Date | Libellé | Référence | Montant | Payé | Reste à Payé | Observation
+- Summary Row: Total Expenses, Total Amount Settled, Total Pending Liabilities.
+
+#### Report 7: Fixed Assets & Equipment Ledger (حساب التجهيزات - Equipements)
+Tracks capital investments and monthly straight-line depreciation calculations (Amortissement).
+- Columns: Date | Libellé | Référence | Montant | Amortissement | Valeur Nette | Observation
+- Logic: Valeur Nette = Montant - Amortissement.
+
+#### Report 8: Financial Statements Summary (Mesa de Fin d'Exercice)
+A split two-component summary report generating the Year-End/Period-End positions:
+
+A) Income Statement (حساب النتائج - Compte de Résultat):
+- Layout: Structured vertical matrix.
+- Rows:
+  1. Recettes sur Ventes (Revenue)
+  2. Autres Recettes et Prestations de Services
+  3. Variation de Stocks
+  4. Total Recettes sur Produits (1) [Sum of 1+2+3]
+  5. Dépenses sur Achats
+  6. Autres Dépenses sur Activité
+  7. Total Dépenses sur Charges (2) [Sum of 5+6]
+  8. Résultat de l'Exercice (Net Profit/Loss) = (Total Recettes (1) - Total Dépenses (2))
+
+B) Simplified Balance Sheet (الوضعية المالية - Bilan):
+- Layout: Dual-column layout balancing Actif and Passif.
+- Left Column (Actif): Immobilisations | Stocks | Créances de l'Exploitation | Caisse | Banque | TOTAL ACTIF
+- Right Column (Passif): Capital | Résultat de l'Exercice | Emrpunts | Dettes de l'Exploitation | TVA à Payer (TVA Collectée - TVA Déductible) | TOTAL PASSIF
+- Constraint: Ensure Balance Check passes: TOTAL ACTIF === TOTAL PASSIF.
+
+### 3. EXPORT IMPLEMENTATION DETAILS
+- Excel Export: Use a robust engine (like xlsx, ExcelJS, or pandas depending on our stack). Ensure tables map to authentic cells with explicit bold treatments on headers and summary total rows. 
+- PDF Export: Ensure perfect layout scaling. If a table has wide columns (like Purchases/Sales), default the PDF download view configuration to landscape layout automatically to avoid truncating visual data text.
+
+Please generate the frontend components, state management for switching reports, mathematical helpers for the summaries, and backend routes/utilities to pull this data dynamically and generate the file exports.

@@ -9,6 +9,7 @@ import {
   PackageSearch, 
   Users, 
   Receipt,
+  FileBarChart2,
   Menu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export function Layout({ children }: LayoutProps) {
     { name: "Stocks", href: "/inventory", icon: PackageSearch },
     { name: "Personnel", href: "/employees", icon: Users },
     { name: "Paie", href: "/payroll", icon: Receipt },
+    { name: "Rapports", href: "/reports", icon: FileBarChart2 },
   ];
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (

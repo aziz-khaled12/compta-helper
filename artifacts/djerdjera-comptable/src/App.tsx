@@ -12,6 +12,7 @@ import Journal from "@/pages/journal";
 import Inventory from "@/pages/inventory";
 import Employees from "@/pages/employees";
 import Payroll from "@/pages/payroll";
+import Reports from "@/pages/reports";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/inventory" component={Inventory} />
         <Route path="/employees" component={Employees} />
         <Route path="/payroll" component={Payroll} />
+        <Route path="/reports" component={Reports} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
