@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./companies";
 export * from "./funding";
 export * from "./fixedAssets";

@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "./components/layout";
 import NotFound from "@/pages/not-found";
+import { useAuth } from "@workspace/replit-auth-web";
+import { useGetCompany } from "@workspace/api-client-react";
 
 import Dashboard from "@/pages/dashboard";
 import Company from "@/pages/company";
@@ -13,10 +15,33 @@ import Inventory from "@/pages/inventory";
 import Employees from "@/pages/employees";
 import Payroll from "@/pages/payroll";
 import Reports from "@/pages/reports";
+import Login from "@/pages/login";
+import Onboarding from "@/pages/onboarding";
 
 const queryClient = new QueryClient();
 
-function Router() {
+function AppRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { data: company, isLoading: companyLoading } = useGetCompany({
+    query: { enabled: isAuthenticated, retry: false },
+  });
+
+  if (isLoading || (isAuthenticated && companyLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground text-sm">Chargement…</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  if (!company) {
+    return <Onboarding />;
+  }
+
   return (
     <Layout>
       <Switch>
@@ -39,7 +64,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+          <AppRouter />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

@@ -1,19 +1,31 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useGetCompany } from "@workspace/api-client-react";
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Briefcase, 
-  BookOpen, 
-  PackageSearch, 
-  Users, 
+import { useAuth } from "@workspace/replit-auth-web";
+import {
+  LayoutDashboard,
+  Building2,
+  Briefcase,
+  BookOpen,
+  PackageSearch,
+  Users,
   Receipt,
   FileBarChart2,
-  Menu
+  Menu,
+  LogOut,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,6 +34,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { data: company } = useGetCompany();
+  const { user, logout } = useAuth();
 
   const navigation = [
     { name: "Tableau de bord", href: "/", icon: LayoutDashboard },
@@ -33,6 +46,18 @@ export function Layout({ children }: LayoutProps) {
     { name: "Paie", href: "/payroll", icon: Receipt },
     { name: "Rapports", href: "/reports", icon: FileBarChart2 },
   ];
+
+  const displayName =
+    user
+      ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Utilisateur"
+      : "Utilisateur";
+
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <div className="space-y-1">
@@ -56,6 +81,41 @@ export function Layout({ children }: LayoutProps) {
     </div>
   );
 
+  const UserMenu = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-9 gap-2 px-2">
+          <Avatar className="h-7 w-7">
+            {user?.profileImageUrl && (
+              <AvatarImage src={user.profileImageUrl} alt={displayName} />
+            )}
+            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden md:inline text-sm font-medium max-w-[140px] truncate">
+            {displayName}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuLabel className="flex flex-col gap-0.5">
+          <span className="font-medium">{displayName}</span>
+          {user?.email && (
+            <span className="text-xs font-normal text-muted-foreground truncate">
+              {user.email}
+            </span>
+          )}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout} className="text-destructive gap-2">
+          <LogOut className="h-4 w-4" />
+          Se déconnecter
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <div className="min-h-screen bg-background flex w-full">
       {/* Desktop Sidebar */}
@@ -73,46 +133,76 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex-1 overflow-y-auto py-4 px-3">
           <NavLinks />
         </div>
+        {/* Sidebar user footer */}
+        <div className="border-t border-sidebar-border p-3">
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-sidebar-accent/50 transition-colors">
+            <Avatar className="h-7 w-7 shrink-0">
+              {user?.profileImageUrl && (
+                <AvatarImage src={user.profileImageUrl} alt={displayName} />
+              )}
+              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">{displayName}</p>
+              {user?.email && (
+                <p className="text-[10px] text-sidebar-foreground/60 truncate">{user.email}</p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-sidebar-foreground/60 hover:text-destructive shrink-0"
+              onClick={logout}
+              title="Se déconnecter"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <header className="h-16 border-b bg-card flex items-center justify-between px-4 md:px-8 shrink-0">
-          <div className="flex items-center gap-4 md:hidden">
+      <main className="flex-1 flex flex-col min-w-0 h-screen">
+        {/* Header */}
+        <header className="h-16 border-b bg-card flex items-center justify-between px-4 md:px-6 shrink-0">
+          {/* Mobile: hamburger + title */}
+          <div className="flex items-center gap-3 md:hidden">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="-ml-2">
                   <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
+                  <span className="sr-only">Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+              <SheetContent
+                side="left"
+                className="w-64 p-0 bg-sidebar border-sidebar-border"
+              >
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-sidebar-foreground tracking-tight leading-none text-lg">
-                      {company?.name || "DJERDJERA"}
-                    </span>
-                  </div>
+                  <span className="font-bold text-sidebar-foreground tracking-tight text-lg">
+                    {company?.name || "DJERDJERA"}
+                  </span>
                 </div>
                 <div className="p-3">
                   <NavLinks />
                 </div>
               </SheetContent>
             </Sheet>
-            <div className="font-semibold text-foreground">
+            <div className="font-semibold text-foreground text-sm">
               {company?.name || "DJERDJERA Comptable"}
             </div>
           </div>
-          
-          <div className="hidden md:block">
-            {/* Desktop header content if needed */}
-          </div>
+
+          {/* Desktop: left spacer */}
+          <div className="hidden md:block" />
+
+          {/* User menu (both mobile + desktop) */}
+          <UserMenu />
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
-            {children}
-          </div>
+          <div className="max-w-6xl mx-auto">{children}</div>
         </div>
       </main>
     </div>

@@ -1,0 +1,41 @@
+Role and Objective:
+You are an expert full-stack developer. We are building a modern accounting SaaS application designed to automate and eventually replace traditional accounting workflows. We already have a foundational codebase, and now we need to implement a secure authentication system coupled with a comprehensive, interactive user onboarding flow.
+
+Task 1: Authentication
+
+Implement a secure user authentication system (Sign Up, Log In, Log Out).
+
+Ensure the session is securely managed.
+
+Once a user successfully signs up for the first time, immediately redirect them to the "Initial Setup Wizard" (Onboarding Flow).
+
+Task 2: Interactive Onboarding Flow (UI/UX)
+
+Create a modern, interactive multi-step form wizard for the onboarding process.
+
+UI Design: Use a horizontal stepper, a sliding carousel-style layout, or smooth-transitioning tabs to guide the user through the steps without overwhelming them. The transitions between steps should be fluid and visually appealing.
+
+Include clear validation for each step before allowing the user to proceed to the next.
+
+Provide a progress indicator (e.g., "Step 1 of 5").
+
+Task 3: Data Collection Steps (The Wizard)
+The wizard must collect the following business entities. Please generate the necessary frontend forms and backend schema (tables/models) to store this data securely, linked to the newly authenticated User/Company ID.
+
+Step 1: Company Identity & Capital
+
+Fields: Company Name, Registration/Tax ID, Address, Primary Contact.
+
+Capital: Initial financial capital investment, currency type, and bank account balances.
+
+Step 2: Fixed Assets (Immobilisations)
+
+Fields: Asset name, category (e.g., equipment, property), purchase value, current book value, and acquisition date.
+
+Step 3: Initial Stock / Inventory
+
+Fields: Item names, SKUs/Categories, initial quantities on hand, and unit costs to establish the starting inventory valuation.
+
+Step 4: Personnel
+
+Fields: Employee names, roles/titles, departments/cost centers, and base salary/wage information. Structure this so it can easily scale into a broader payroll or time-management module later.

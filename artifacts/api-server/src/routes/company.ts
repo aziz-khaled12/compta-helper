@@ -14,8 +14,17 @@ import { toIsoDate } from "../lib/dates";
 
 const router: IRouter = Router();
 
-router.get("/company", async (_req, res): Promise<void> => {
-  const [company] = await db.select().from(companiesTable).limit(1);
+router.get("/company", async (req, res): Promise<void> => {
+  const userId = req.user?.id;
+  const companyId = await getActiveCompanyId(userId);
+  if (!companyId) {
+    res.status(404).json({ error: "No company configured" });
+    return;
+  }
+  const [company] = await db
+    .select()
+    .from(companiesTable)
+    .where(eq(companiesTable.id, companyId));
   if (!company) {
     res.status(404).json({ error: "No company configured" });
     return;
@@ -39,7 +48,8 @@ router.put("/company", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const existingId = await getActiveCompanyId();
+  const userId = req.user?.id;
+  const existingId = await getActiveCompanyId(userId);
   let saved;
   if (existingId) {
     [saved] = await db
@@ -62,6 +72,7 @@ router.put("/company", async (req, res): Promise<void> => {
         ai: parsed.data.ai,
         address: parsed.data.address ?? null,
         legalForm: parsed.data.legalForm ?? null,
+        userId: userId ?? null,
       })
       .returning();
   }
@@ -82,8 +93,8 @@ router.put("/company", async (req, res): Promise<void> => {
   );
 });
 
-router.get("/company/funding", async (_req, res): Promise<void> => {
-  const companyId = await getActiveCompanyId();
+router.get("/company/funding", async (req, res): Promise<void> => {
+  const companyId = await getActiveCompanyId(req.user?.id);
   if (!companyId) {
     res.json([]);
     return;
@@ -114,7 +125,7 @@ router.post("/company/funding", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const companyId = await getActiveCompanyId();
+  const companyId = await getActiveCompanyId(req.user?.id);
   if (!companyId) {
     res
       .status(400)

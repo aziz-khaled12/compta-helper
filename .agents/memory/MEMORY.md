@@ -1,0 +1,1 @@
+- [replit-auth-web lib setup](replit-auth-web-lib.md) — composite lib for Vite auth hook; needs `vite` devDep for import.meta.env types + must be built before codegen typecheck:libs runs.
