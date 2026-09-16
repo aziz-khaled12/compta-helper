@@ -1,11 +1,14 @@
 # ============================================================================
 # Render Blueprint — DJERDJERA Comptable API
 #
-# Two environments, declared together so they stay in step:
-#   main -> compta-api + compta-db            (production)
-#   dev  -> compta-api-staging + compta-db-staging
+# One service, on `main`. The SPA lives on Vercel and the database on Neon;
+# this file covers only the API process.
 #
-# The SPA lives on Vercel, not here; this file only covers the API.
+# Deliberately no `databases:` block. Render's free tier allows exactly one
+# Postgres instance per workspace, and that instance is deleted 30 days after
+# creation (14-day grace, then gone). A database that removes itself is not a
+# production database, so the data lives on Neon instead, where the free tier
+# does not expire.
 #
 # Build and start both run from the REPO ROOT, not artifacts/server: `pnpm
 # install` has to resolve the lib/* workspace packages (@workspace/db,
@@ -14,7 +17,6 @@
 # ============================================================================
 
 services:
-  # --- Production -----------------------------------------------------------
   - type: web
     name: compta-api
     runtime: node
@@ -36,17 +38,22 @@ services:
       # the local checkout agree on the runtime.
       - key: NODE_VERSION
         value: 24.11.1
+      # Neon's POOLED connection string (the host carrying the `-pooler`
+      # suffix). Pasted in the Dashboard during Apply; never committed. The
+      # direct, unpooled string is only for `drizzle-kit push`, which needs
+      # session state that PgBouncer in transaction mode does not carry.
       - key: DATABASE_URL
-        fromDatabase:
-          name: compta-db
-          property: connectionString
+        sync: false
       # Render generates and holds this. It is deliberately NOT in the repo —
       # auth.ts refuses to boot without it, and a fallback would be a published
       # signing key.
       - key: JWT_SECRET
         generateValue: true
+      # Required, not optional: index.ts calls assertGeminiConfigured() before
+      # it opens the port, so a blank value crash-loops the service rather than
+      # degrading a background feature.
       - key: GEMINI_API_KEY
-        sync: false # prompted in the Dashboard; never committed
+        sync: false
       # Set to the Vercel production domain once the frontend is deployed. The
       # browser only ever talks to Vercel under the rewrite proxy, so this
       # guards non-browser callers rather than the app's own flow.
@@ -54,59 +61,8 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-      # The crawl scheduler runs in-process. This plan sleeps after 15 minutes
-      # idle, which stops it mid-interval, so it is off until the crawl moves
-      # to a Render Cron Job or the service moves off the free plan.
+      # The crawl scheduler runs in-process. This plan spins down after 15
+      # minutes idle, which stops it mid-interval, so it is off until the crawl
+      # moves to a Render Cron Job or the service moves off the free plan.
       - key: CRAWL_ENABLED
         value: "false"
-
-  # --- Staging --------------------------------------------------------------
-  # Same shape as production, on the `dev` branch and its own database.
-  - type: web
-    name: compta-api-staging
-    runtime: node
-    plan: free
-    region: frankfurt
-    branch: dev
-    autoDeployTrigger: commit
-    healthCheckPath: /api/healthz
-    buildCommand: >-
-      npm install -g pnpm@12.4.1 &&
-      pnpm install --frozen-lockfile --prod=false &&
-      pnpm --filter @workspace/server run build
-    startCommand: node --enable-source-maps artifacts/server/dist/index.mjs
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 24.11.1
-      - key: DATABASE_URL
-        fromDatabase:
-          name: compta-db-staging
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: GEMINI_API_KEY
-        sync: false
-      # Set to the Vercel *preview* domain pattern once previews are wired up.
-      - key: CORS_ORIGINS
-        sync: false
-      - key: LOG_LEVEL
-        value: info
-      - key: CRAWL_ENABLED
-        value: "false"
-
-databases:
-  - name: compta-db
-    plan: free
-    region: frankfurt
-    postgresMajorVersion: "16"
-    databaseName: compta_helper
-    user: compta
-
-  - name: compta-db-staging
-    plan: free
-    region: frankfurt
-    postgresMajorVersion: "16"
-    databaseName: compta_staging
-    user: compta_staging
