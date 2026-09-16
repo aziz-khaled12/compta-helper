@@ -24,4 +24,12 @@ export interface Transaction {
   thirdParty?: string | null;
   /** e.g. RENT, ELECTRICITY, SUPPLIES, RAW_MATERIALS */
   category?: string | null;
+  /** Stock article this entry moved, if any */
+  itemId?: string | null;
+  /** Quantity of the article moved */
+  quantity?: number | null;
+  /** The CUMP applied when this entry was posted. Frozen at posting time: CUMP moves with the stock, so recomputing an old entry at today's average would restate books that have already been closed. */
+  unitCostHt?: number | null;
+  /** quantity x unitCostHt. Relieved on a sale (class 6); null otherwise. */
+  costOfGoodsSold?: number | null;
 }

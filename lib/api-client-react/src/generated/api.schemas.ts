@@ -21,21 +21,21 @@ export interface AuthUserEnvelope {
   user: AuthUser | null;
 }
 
-export interface MobileTokenExchangeRequest {
+export interface RegisterRequest {
+  email: string;
   /** @minLength 1 */
-  code: string;
-  /** @minLength 1 */
-  code_verifier: string;
-  /** @minLength 1 */
-  redirect_uri: string;
-  /** @minLength 1 */
-  state: string;
-  /** @minLength 1 */
-  nonce?: string;
+  password: string;
+  firstName: string;
+  lastName: string;
 }
 
-export interface MobileTokenExchangeSuccess {
-  token: string;
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface TokenResponse {
+  accessToken: string;
 }
 
 export const LogoutSuccessValue = {
@@ -51,6 +51,18 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50.
+ */
+export type CompanyTaxRegime =
+  | (typeof CompanyTaxRegime)[keyof typeof CompanyTaxRegime]
+  | null;
+
+export const CompanyTaxRegime = {
+  FORFAITAIRE: "FORFAITAIRE",
+  REEL: "REEL",
+} as const;
+
 export interface Company {
   id: string;
   name: string;
@@ -61,8 +73,26 @@ export interface Company {
   address?: string | null;
   /** e.g. EURL, SARL, SNC */
   legalForm?: string | null;
+  /** Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50. */
+  taxRegime?: CompanyTaxRegime;
+  /** Sector of activity, as a code from the @workspace/sectors catalogue. Used to filter Journal Officiel decrees down to the ones that concern this company. Deliberately not an enum here: the catalogue is TypeScript and is the single source of truth for valid codes, so an enum duplicated into this file would drift. The server validates the code against the catalogue and rejects an unknown one. */
+  sectorCode?: string | null;
+  /** Human-readable sector name, derived server-side from sectorCode. Returned only — a client cannot set it, so the stored label can never disagree with the code it belongs to. */
+  sectorLabel?: string | null;
   createdAt: string;
 }
+
+/**
+ * Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50.
+ */
+export type CompanyInputTaxRegime =
+  | (typeof CompanyInputTaxRegime)[keyof typeof CompanyInputTaxRegime]
+  | null;
+
+export const CompanyInputTaxRegime = {
+  FORFAITAIRE: "FORFAITAIRE",
+  REEL: "REEL",
+} as const;
 
 export interface CompanyInput {
   /** @minLength 1 */
@@ -73,6 +103,10 @@ export interface CompanyInput {
   ai: string;
   address?: string | null;
   legalForm?: string | null;
+  /** Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50. */
+  taxRegime?: CompanyInputTaxRegime;
+  /** Sector of activity, as a code from the @workspace/sectors catalogue. Validated server-side against that catalogue. `sectorLabel` is derived from it and is therefore not accepted on input. */
+  sectorCode?: string | null;
 }
 
 export type FundingEntrySource =
@@ -191,6 +225,14 @@ export interface Transaction {
   thirdParty?: string | null;
   /** e.g. RENT, ELECTRICITY, SUPPLIES, RAW_MATERIALS */
   category?: string | null;
+  /** Stock article this entry moved, if any */
+  itemId?: string | null;
+  /** Quantity of the article moved */
+  quantity?: number | null;
+  /** The CUMP applied when this entry was posted. Frozen at posting time: CUMP moves with the stock, so recomputing an old entry at today's average would restate books that have already been closed. */
+  unitCostHt?: number | null;
+  /** quantity x unitCostHt. Relieved on a sale (class 6); null otherwise. */
+  costOfGoodsSold?: number | null;
 }
 
 export type TransactionInputType =
@@ -236,6 +278,13 @@ export interface TransactionInput {
   status: TransactionInputStatus;
   thirdParty?: string | null;
   category?: string | null;
+  /** Optional stock article. A SALE naming one relieves inventory at the CUMP and records the cost; a PURCHASE naming one feeds it at amountHt / quantity. Entries without an itemId behave as before. */
+  itemId?: string | null;
+  /**
+   * Required whenever itemId is given.
+   * @minimum 0
+   */
+  quantity?: number | null;
 }
 
 export type InventoryItemCategory =
@@ -291,6 +340,8 @@ export interface InventoryMovement {
   direction: InventoryMovementDirection;
   unitCostHt: number;
   note?: string | null;
+  /** The journal entry that generated this movement, if any. Null for movements entered by hand on the Stocks page. */
+  transactionId?: string | null;
 }
 
 export type InventoryMovementInputDirection =
@@ -307,8 +358,11 @@ export interface InventoryMovementInput {
   /** @minimum 0 */
   quantity: number;
   direction: InventoryMovementInputDirection;
-  /** @minimum 0 */
-  unitCostHt: number;
+  /**
+   * Required for an IN. Optional for an OUT, where omitting it (or sending 0) applies the article's current CUMP.
+   * @minimum 0
+   */
+  unitCostHt?: number | null;
   note?: string | null;
 }
 
@@ -423,19 +477,111 @@ export interface TvaSummary {
 }
 
 /**
+ * The signals that made this text relevant. Structured rather than prose so the client can phrase the reason in the user's own words — a business owner needs to see *why* a text concerns them, in a sentence they can read, not an opaque score.
+
+ */
+export interface LegalAlertMatch {
+  sectors: string[];
+  keywords: string[];
+  legalForm: boolean;
+  taxRegime: boolean;
+}
+
+export type LegalAlertRelevance =
+  (typeof LegalAlertRelevance)[keyof typeof LegalAlertRelevance];
+
+export const LegalAlertRelevance = {
+  HIGH: "HIGH",
+  MEDIUM: "MEDIUM",
+  LOW: "LOW",
+} as const;
+
+export interface LegalAlert {
+  id: string;
+  documentId: string;
+  /** e.g. Décret exécutif, Arrêté interministériel */
+  docKind: string;
+  docNumber?: string | null;
+  titleFr?: string | null;
+  titleAr?: string | null;
+  /** One sentence, written for a non-lawyer */
+  summaryFr?: string | null;
+  summaryAr?: string | null;
+  publishedOn?: string | null;
+  pageFrom?: number | null;
+  year: number;
+  /** Journal Officiel issue number */
+  issueNumber: number;
+  relevance: LegalAlertRelevance;
+  matchScore: number;
+  matchedOn: LegalAlertMatch;
+  acknowledgedAt?: string | null;
+  createdAt: string;
+}
+
+export interface LegalAlertRefresh {
+  /** Number of alerts written */
+  refreshed: number;
+}
+
+export type InsightFindingSeverity =
+  (typeof InsightFindingSeverity)[keyof typeof InsightFindingSeverity];
+
+export const InsightFindingSeverity = {
+  CRITICAL: "CRITICAL",
+  WARNING: "WARNING",
+  INFO: "INFO",
+} as const;
+
+/**
+ * The same figures unformatted — what the narration may reason over
+ */
+export type InsightFindingMetrics = { [key: string]: number };
+
+/**
+ * One observation, as the browser computed it. The field names mirror the client's `Finding` exactly, because this is a mirror of that type rather than a re-modelling of it.
+
+ */
+export interface InsightFinding {
+  /** The knowledge-base key. Opaque to the server, which only echoes it back — the client owns the rules and their wording.
+   */
+  ruleId: string;
+  severity: InsightFindingSeverity;
+  title: string;
+  /** The figures behind the finding, already formatted for reading */
+  evidence?: string[];
+  /** The same figures unformatted — what the narration may reason over */
+  metrics?: InsightFindingMetrics;
+  periodRef: string;
+  subject?: string | null;
+}
+
+export interface InsightNarrateInput {
+  periodFrom?: string | null;
+  periodTo?: string | null;
+  findings: InsightFinding[];
+}
+
+export interface InsightPriority {
+  /** Echoes one of the ruleIds in the request — never a new one */
+  ruleId: string;
+  whyItMatters: string;
+  action: string;
+}
+
+export interface InsightsNarrative {
+  /** Two or three sentences, in plain French, for a business owner */
+  summary: string;
+  priorities: InsightPriority[];
+  model: string;
+  /** True when this is a stored narrative for identical findings */
+  cached: boolean;
+}
+
+/**
  * Opaque session token — `Bearer <sid>`.
  */
 export type AuthorizationSessionHeaderParameter = string;
-
-export type BeginBrowserLoginParams = {
-  returnTo?: string;
-};
-
-export type HandleBrowserLoginCallbackParams = {
-  code?: string;
-  state?: string;
-  iss?: string;
-};
 
 export type ListTransactionsParams = {
   type?: ListTransactionsType;
@@ -464,4 +610,8 @@ export type ListPayrollsParams = {
    * YYYY-MM
    */
   monthYear?: string;
+};
+
+export type ListLegalAlertsParams = {
+  includeAcknowledged?: boolean;
 };

@@ -18,6 +18,9 @@ tags:
   - name: employees
   - name: payroll
   - name: dashboard
+  - name: legal
+  - name: insights
+    description: Legal texts from the Journal Officiel matched to the company's declared identity.
 paths:
   /auth/user:
     get:
@@ -34,89 +37,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthUserEnvelope'
-  /login:
-    get:
-      tags: [Auth]
-      operationId: beginBrowserLogin
-      summary: Start the browser OIDC login flow
-      parameters:
-        - name: returnTo
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '302':
-          description: Redirect to the OIDC authorization endpoint.
-  /callback:
-    get:
-      tags: [Auth]
-      operationId: handleBrowserLoginCallback
-      summary: Complete the browser OIDC login flow
-      parameters:
-        - name: code
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: state
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: iss
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '302':
-          description: Redirect to returnTo on success or /api/login on failure.
-  /logout:
-    get:
-      tags: [Auth]
-      operationId: logoutBrowserSession
-      summary: Clear the session and begin OIDC logout
-      parameters:
-        - $ref: '#/components/parameters/AuthorizationSessionHeader'
-        - $ref: '#/components/parameters/SessionCookie'
-      responses:
-        '302':
-          description: Redirect to the OIDC provider logout URL.
-  /mobile-auth/token-exchange:
+  /auth/register:
     post:
       tags: [Auth]
-      operationId: exchangeMobileAuthorizationCode
-      summary: Exchange a mobile OIDC code for a session token
+      operationId: registerUser
+      summary: Register a new user
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MobileTokenExchangeRequest'
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '200':
-          description: Session created successfully.
+          description: Registration successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MobileTokenExchangeSuccess'
+                $ref: '#/components/schemas/AuthUserEnvelope'
         '400':
-          description: Missing or invalid required fields.
-        '401':
-          description: Token did not contain usable claims.
-        '500':
-          description: Token exchange failed.
-  /mobile-auth/logout:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /auth/login:
     post:
       tags: [Auth]
-      operationId: logoutMobileSession
-      summary: Delete a mobile session token
-      parameters:
-        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+      operationId: loginUser
+      summary: Login and receive access and refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Logout processed.
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshSession
+      summary: Get a new access token using the refresh token cookie
+      responses:
+        '200':
+          description: Refresh successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutUser
+      summary: Clear session and revoke refresh token
+      responses:
+        '200':
+          description: Logout successful
           content:
             application/json:
               schema:
@@ -530,6 +524,89 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TvaSummary" }
+  /legal/alerts:
+    get:
+      operationId: listLegalAlerts
+      tags: [legal]
+      summary: Journal Officiel texts judged relevant to this company
+      description: >
+        Newest first. Acknowledged alerts are hidden by default — a business owner
+        who has dealt with a text should not have to keep scrolling past it.
+      parameters:
+        - name: includeAcknowledged
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LegalAlert" }
+  /legal/alerts/{id}/acknowledge:
+    post:
+      operationId: acknowledgeLegalAlert
+      tags: [legal]
+      summary: Mark a legal alert as dealt with
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegalAlert" }
+  /legal/refresh:
+    post:
+      operationId: refreshLegalAlerts
+      tags: [legal]
+      summary: Re-match the stored corpus against this company's current identity
+      description: >
+        Matching happens as documents arrive, so a company that declared its
+        sector after the crawl would otherwise see nothing until the next issue
+        is published. This recomputes the whole set on demand.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegalAlertRefresh" }
+  /insights/narrate:
+    post:
+      operationId: narrateInsights
+      tags: [insights]
+      summary: Explain and prioritise findings the browser already computed
+      description: >
+        The Rapports page detects findings in the browser — it is client-side by
+        convention, and re-deriving its aggregates server-side would create a
+        second source of truth. So only the findings cross the wire, never the
+        ledger: the API key stays here and the company's rows stay in the browser.
+
+        Gemini receives figures that deterministic code already produced and is
+        asked to order and explain them. It is never asked to compute anything —
+        the numbers in the narrative are the ones in the request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InsightNarrateInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsightsNarrative" }
+        "503":
+          description: >
+            Narration is unavailable — no API key, or Gemini declined every
+            attempt. The caller already holds the deterministic explanation for
+            every finding, so this is expected to degrade to that text rather
+            than surface an error.
 
 components:
   parameters:
@@ -570,30 +647,34 @@ components:
           oneOf:
             - $ref: '#/components/schemas/AuthUser'
             - type: 'null'
-    MobileTokenExchangeRequest:
+    RegisterRequest:
       type: object
-      required: [code, code_verifier, redirect_uri, state]
+      required: [email, password, firstName, lastName]
       properties:
-        code:
+        email:
+          type: string
+          format: email
+        password:
           type: string
           minLength: 1
-        code_verifier:
+        firstName:
           type: string
-          minLength: 1
-        redirect_uri:
+        lastName:
           type: string
-          minLength: 1
-        state:
-          type: string
-          minLength: 1
-        nonce:
-          type: string
-          minLength: 1
-    MobileTokenExchangeSuccess:
+    LoginRequest:
       type: object
-      required: [token]
+      required: [email, password]
       properties:
-        token:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    TokenResponse:
+      type: object
+      required: [accessToken]
+      properties:
+        accessToken:
           type: string
     LogoutSuccess:
       type: object
@@ -625,6 +706,30 @@ components:
         ai: { type: string, description: "Article d'Imposition" }
         address: { type: string, nullable: true }
         legalForm: { type: string, nullable: true, description: "e.g. EURL, SARL, SNC" }
+        taxRegime:
+          type: string
+          nullable: true
+          enum: [FORFAITAIRE, REEL]
+          description: >-
+            Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12,
+            REEL (النظام الحقيقي) files the G50.
+        sectorCode:
+          type: string
+          nullable: true
+          description: >-
+            Sector of activity, as a code from the @workspace/sectors catalogue.
+            Used to filter Journal Officiel decrees down to the ones that
+            concern this company. Deliberately not an enum here: the catalogue
+            is TypeScript and is the single source of truth for valid codes, so
+            an enum duplicated into this file would drift. The server validates
+            the code against the catalogue and rejects an unknown one.
+        sectorLabel:
+          type: string
+          nullable: true
+          description: >-
+            Human-readable sector name, derived server-side from sectorCode.
+            Returned only — a client cannot set it, so the stored label can
+            never disagree with the code it belongs to.
         createdAt: { type: string, format: date-time }
     CompanyInput:
       type: object
@@ -635,6 +740,20 @@ components:
         ai: { type: string, minLength: 1 }
         address: { type: string, nullable: true }
         legalForm: { type: string, nullable: true }
+        taxRegime:
+          type: string
+          nullable: true
+          enum: [FORFAITAIRE, REEL]
+          description: >-
+            Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12,
+            REEL (النظام الحقيقي) files the G50.
+        sectorCode:
+          type: string
+          nullable: true
+          description: >-
+            Sector of activity, as a code from the @workspace/sectors catalogue.
+            Validated server-side against that catalogue. `sectorLabel` is
+            derived from it and is therefore not accepted on input.
 
     FundingEntry:
       type: object
@@ -708,6 +827,19 @@ components:
         status: { type: string, enum: [PAID, UNPAID, PARTIAL] }
         thirdParty: { type: string, nullable: true, description: "Customer or supplier name" }
         category: { type: string, nullable: true, description: "e.g. RENT, ELECTRICITY, SUPPLIES, RAW_MATERIALS" }
+        itemId: { type: string, format: uuid, nullable: true, description: "Stock article this entry moved, if any" }
+        quantity: { type: number, nullable: true, description: "Quantity of the article moved" }
+        unitCostHt:
+          type: number
+          nullable: true
+          description: >-
+            The CUMP applied when this entry was posted. Frozen at posting time:
+            CUMP moves with the stock, so recomputing an old entry at today's
+            average would restate books that have already been closed.
+        costOfGoodsSold:
+          type: number
+          nullable: true
+          description: "quantity x unitCostHt. Relieved on a sale (class 6); null otherwise."
     TransactionInput:
       type: object
       required: [date, type, label, amountHt, tvaRate, paymentMethod, status]
@@ -721,6 +853,19 @@ components:
         status: { type: string, enum: [PAID, UNPAID, PARTIAL] }
         thirdParty: { type: string, nullable: true }
         category: { type: string, nullable: true }
+        itemId:
+          type: string
+          format: uuid
+          nullable: true
+          description: >-
+            Optional stock article. A SALE naming one relieves inventory at the
+            CUMP and records the cost; a PURCHASE naming one feeds it at
+            amountHt / quantity. Entries without an itemId behave as before.
+        quantity:
+          type: number
+          nullable: true
+          minimum: 0
+          description: Required whenever itemId is given.
 
     InventoryItem:
       type: object
@@ -753,15 +898,28 @@ components:
         direction: { type: string, enum: [IN, OUT] }
         unitCostHt: { type: number }
         note: { type: string, nullable: true }
+        transactionId:
+          type: string
+          format: uuid
+          nullable: true
+          description: >-
+            The journal entry that generated this movement, if any. Null for
+            movements entered by hand on the Stocks page.
     InventoryMovementInput:
       type: object
-      required: [itemId, date, quantity, direction, unitCostHt]
+      required: [itemId, date, quantity, direction]
       properties:
         itemId: { type: string, format: uuid }
         date: { type: string, format: date }
         quantity: { type: number, minimum: 0 }
         direction: { type: string, enum: [IN, OUT] }
-        unitCostHt: { type: number, minimum: 0 }
+        unitCostHt:
+          type: number
+          nullable: true
+          minimum: 0
+          description: >-
+            Required for an IN. Optional for an OUT, where omitting it (or
+            sending 0) applies the article's current CUMP.
         note: { type: string, nullable: true }
 
     Employee:
@@ -847,3 +1005,106 @@ components:
         tvaCollectee: { type: number }
         tvaDeductible: { type: number }
         net: { type: number }
+
+    LegalAlertMatch:
+      type: object
+      description: >
+        The signals that made this text relevant. Structured rather than prose so
+        the client can phrase the reason in the user's own words — a business
+        owner needs to see *why* a text concerns them, in a sentence they can
+        read, not an opaque score.
+      required: [sectors, keywords, legalForm, taxRegime]
+      properties:
+        sectors: { type: array, items: { type: string } }
+        keywords: { type: array, items: { type: string } }
+        legalForm: { type: boolean }
+        taxRegime: { type: boolean }
+
+    LegalAlert:
+      type: object
+      required: [id, documentId, docKind, relevance, matchScore, matchedOn, year, issueNumber, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        docKind: { type: string, description: "e.g. Décret exécutif, Arrêté interministériel" }
+        docNumber: { type: string, nullable: true }
+        titleFr: { type: string, nullable: true }
+        titleAr: { type: string, nullable: true }
+        summaryFr: { type: string, nullable: true, description: "One sentence, written for a non-lawyer" }
+        summaryAr: { type: string, nullable: true }
+        publishedOn: { type: string, format: date, nullable: true }
+        pageFrom: { type: integer, nullable: true }
+        year: { type: integer }
+        issueNumber: { type: integer, description: "Journal Officiel issue number" }
+        relevance: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        matchScore: { type: number }
+        matchedOn: { $ref: "#/components/schemas/LegalAlertMatch" }
+        acknowledgedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    LegalAlertRefresh:
+      type: object
+      required: [refreshed]
+      properties:
+        refreshed: { type: integer, description: "Number of alerts written" }
+
+    InsightFinding:
+      type: object
+      description: >
+        One observation, as the browser computed it. The field names mirror the
+        client's `Finding` exactly, because this is a mirror of that type rather
+        than a re-modelling of it.
+      required: [ruleId, severity, title, periodRef]
+      properties:
+        ruleId:
+          type: string
+          description: >
+            The knowledge-base key. Opaque to the server, which only echoes it
+            back — the client owns the rules and their wording.
+        severity: { type: string, enum: [CRITICAL, WARNING, INFO] }
+        title: { type: string }
+        evidence:
+          type: array
+          items: { type: string }
+          description: "The figures behind the finding, already formatted for reading"
+        metrics:
+          type: object
+          additionalProperties: { type: number }
+          description: "The same figures unformatted — what the narration may reason over"
+        periodRef: { type: string }
+        subject: { type: string, nullable: true }
+
+    InsightNarrateInput:
+      type: object
+      required: [findings]
+      properties:
+        periodFrom: { type: string, format: date, nullable: true }
+        periodTo: { type: string, format: date, nullable: true }
+        findings:
+          type: array
+          items: { $ref: "#/components/schemas/InsightFinding" }
+
+    InsightPriority:
+      type: object
+      required: [ruleId, whyItMatters, action]
+      properties:
+        ruleId:
+          type: string
+          description: "Echoes one of the ruleIds in the request — never a new one"
+        whyItMatters: { type: string }
+        action: { type: string }
+
+    InsightsNarrative:
+      type: object
+      required: [summary, priorities, model, cached]
+      properties:
+        summary:
+          type: string
+          description: "Two or three sentences, in plain French, for a business owner"
+        priorities:
+          type: array
+          items: { $ref: "#/components/schemas/InsightPriority" }
+        model: { type: string }
+        cached:
+          type: boolean
+          description: "True when this is a stored narrative for identical findings"

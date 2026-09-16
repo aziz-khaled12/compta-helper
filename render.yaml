@@ -1,0 +1,112 @@
+# ============================================================================
+# Render Blueprint — DJERDJERA Comptable API
+#
+# Two environments, declared together so they stay in step:
+#   main -> compta-api + compta-db            (production)
+#   dev  -> compta-api-staging + compta-db-staging
+#
+# The SPA lives on Vercel, not here; this file only covers the API.
+#
+# Build and start both run from the REPO ROOT, not artifacts/server: `pnpm
+# install` has to resolve the lib/* workspace packages (@workspace/db,
+# @workspace/api-zod, @workspace/sectors) that the server imports directly.
+# Setting rootDir to the package would break that resolution.
+# ============================================================================
+
+services:
+  # --- Production -----------------------------------------------------------
+  - type: web
+    name: compta-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    # `autoDeploy` is deprecated; the current key takes commit | checksPass | off.
+    autoDeployTrigger: commit
+    healthCheckPath: /api/healthz
+    buildCommand: >-
+      npm install -g pnpm@12.4.1 &&
+      pnpm install --frozen-lockfile --prod=false &&
+      pnpm --filter @workspace/server run build
+    startCommand: node --enable-source-maps artifacts/server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Pinned explicitly rather than left to engines.node, so the build and
+      # the local checkout agree on the runtime.
+      - key: NODE_VERSION
+        value: 24.11.1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: compta-db
+          property: connectionString
+      # Render generates and holds this. It is deliberately NOT in the repo —
+      # auth.ts refuses to boot without it, and a fallback would be a published
+      # signing key.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false # prompted in the Dashboard; never committed
+      # Set to the Vercel production domain once the frontend is deployed. The
+      # browser only ever talks to Vercel under the rewrite proxy, so this
+      # guards non-browser callers rather than the app's own flow.
+      - key: CORS_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      # The crawl scheduler runs in-process. This plan sleeps after 15 minutes
+      # idle, which stops it mid-interval, so it is off until the crawl moves
+      # to a Render Cron Job or the service moves off the free plan.
+      - key: CRAWL_ENABLED
+        value: "false"
+
+  # --- Staging --------------------------------------------------------------
+  # Same shape as production, on the `dev` branch and its own database.
+  - type: web
+    name: compta-api-staging
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: dev
+    autoDeployTrigger: commit
+    healthCheckPath: /api/healthz
+    buildCommand: >-
+      npm install -g pnpm@12.4.1 &&
+      pnpm install --frozen-lockfile --prod=false &&
+      pnpm --filter @workspace/server run build
+    startCommand: node --enable-source-maps artifacts/server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.11.1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: compta-db-staging
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      # Set to the Vercel *preview* domain pattern once previews are wired up.
+      - key: CORS_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: CRAWL_ENABLED
+        value: "false"
+
+databases:
+  - name: compta-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "16"
+    databaseName: compta_helper
+    user: compta
+
+  - name: compta-db-staging
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "16"
+    databaseName: compta_staging
+    user: compta_staging

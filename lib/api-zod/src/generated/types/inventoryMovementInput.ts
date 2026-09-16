@@ -13,7 +13,10 @@ export interface InventoryMovementInput {
   /** @minimum 0 */
   quantity: number;
   direction: InventoryMovementInputDirection;
-  /** @minimum 0 */
-  unitCostHt: number;
+  /**
+   * Required for an IN. Optional for an OUT, where omitting it (or sending 0) applies the article's current CUMP.
+   * @minimum 0
+   */
+  unitCostHt?: number | null;
   note?: string | null;
 }

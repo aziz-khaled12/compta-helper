@@ -31,58 +31,52 @@ export const GetCurrentAuthUserResponse = zod.object({
 });
 
 /**
- * @summary Start the browser OIDC login flow
+ * @summary Register a new user
  */
-export const BeginBrowserLoginQueryParams = zod.object({
-  returnTo: zod.coerce.string().optional(),
+
+export const RegisterUserBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string().min(1),
+  firstName: zod.string(),
+  lastName: zod.string(),
+});
+
+export const RegisterUserResponse = zod.object({
+  user: zod.union([
+    zod.object({
+      id: zod.string(),
+      email: zod.string().nullable(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      profileImageUrl: zod.string().nullable(),
+    }),
+    zod.null(),
+  ]),
 });
 
 /**
- * @summary Complete the browser OIDC login flow
+ * @summary Login and receive access and refresh tokens
  */
-export const HandleBrowserLoginCallbackQueryParams = zod.object({
-  code: zod.coerce.string().optional(),
-  state: zod.coerce.string().optional(),
-  iss: zod.coerce.string().optional(),
+export const LoginUserBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string(),
+});
+
+export const LoginUserResponse = zod.object({
+  accessToken: zod.string(),
 });
 
 /**
- * @summary Clear the session and begin OIDC logout
+ * @summary Get a new access token using the refresh token cookie
  */
-export const LogoutBrowserSessionHeader = zod.object({
-  Authorization: zod
-    .string()
-    .optional()
-    .describe("Opaque session token — `Bearer <sid>`."),
+export const RefreshSessionResponse = zod.object({
+  accessToken: zod.string(),
 });
 
 /**
- * @summary Exchange a mobile OIDC code for a session token
+ * @summary Clear session and revoke refresh token
  */
-
-export const ExchangeMobileAuthorizationCodeBody = zod.object({
-  code: zod.string().min(1),
-  code_verifier: zod.string().min(1),
-  redirect_uri: zod.string().min(1),
-  state: zod.string().min(1),
-  nonce: zod.string().min(1).optional(),
-});
-
-export const ExchangeMobileAuthorizationCodeResponse = zod.object({
-  token: zod.string(),
-});
-
-/**
- * @summary Delete a mobile session token
- */
-export const LogoutMobileSessionHeader = zod.object({
-  Authorization: zod
-    .string()
-    .optional()
-    .describe("Opaque session token — `Bearer <sid>`."),
-});
-
-export const LogoutMobileSessionResponse = zod.object({
+export const LogoutUserResponse = zod.object({
   success: zod.boolean(),
 });
 
@@ -103,6 +97,24 @@ export const GetCompanyResponse = zod.object({
   ai: zod.string().describe("Article d'Imposition"),
   address: zod.string().nullish(),
   legalForm: zod.string().nullish().describe("e.g. EURL, SARL, SNC"),
+  taxRegime: zod
+    .enum(["FORFAITAIRE", "REEL"])
+    .nullish()
+    .describe(
+      "Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50.",
+    ),
+  sectorCode: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sector of activity, as a code from the @workspace\/sectors catalogue. Used to filter Journal Officiel decrees down to the ones that concern this company. Deliberately not an enum here: the catalogue is TypeScript and is the single source of truth for valid codes, so an enum duplicated into this file would drift. The server validates the code against the catalogue and rejects an unknown one.",
+    ),
+  sectorLabel: zod
+    .string()
+    .nullish()
+    .describe(
+      "Human-readable sector name, derived server-side from sectorCode. Returned only — a client cannot set it, so the stored label can never disagree with the code it belongs to.",
+    ),
   createdAt: zod.coerce.date(),
 });
 
@@ -116,6 +128,18 @@ export const UpsertCompanyBody = zod.object({
   ai: zod.string().min(1),
   address: zod.string().nullish(),
   legalForm: zod.string().nullish(),
+  taxRegime: zod
+    .enum(["FORFAITAIRE", "REEL"])
+    .nullish()
+    .describe(
+      "Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50.",
+    ),
+  sectorCode: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sector of activity, as a code from the @workspace\/sectors catalogue. Validated server-side against that catalogue. `sectorLabel` is derived from it and is therefore not accepted on input.",
+    ),
 });
 
 export const UpsertCompanyResponse = zod.object({
@@ -125,6 +149,24 @@ export const UpsertCompanyResponse = zod.object({
   ai: zod.string().describe("Article d'Imposition"),
   address: zod.string().nullish(),
   legalForm: zod.string().nullish().describe("e.g. EURL, SARL, SNC"),
+  taxRegime: zod
+    .enum(["FORFAITAIRE", "REEL"])
+    .nullish()
+    .describe(
+      "Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50.",
+    ),
+  sectorCode: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sector of activity, as a code from the @workspace\/sectors catalogue. Used to filter Journal Officiel decrees down to the ones that concern this company. Deliberately not an enum here: the catalogue is TypeScript and is the single source of truth for valid codes, so an enum duplicated into this file would drift. The server validates the code against the catalogue and rejects an unknown one.",
+    ),
+  sectorLabel: zod
+    .string()
+    .nullish()
+    .describe(
+      "Human-readable sector name, derived server-side from sectorCode. Returned only — a client cannot set it, so the stored label can never disagree with the code it belongs to.",
+    ),
   createdAt: zod.coerce.date(),
 });
 
@@ -257,6 +299,24 @@ export const ListTransactionsResponseItem = zod.object({
     .string()
     .nullish()
     .describe("e.g. RENT, ELECTRICITY, SUPPLIES, RAW_MATERIALS"),
+  itemId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe("Stock article this entry moved, if any"),
+  quantity: zod.number().nullish().describe("Quantity of the article moved"),
+  unitCostHt: zod
+    .number()
+    .nullish()
+    .describe(
+      "The CUMP applied when this entry was posted. Frozen at posting time: CUMP moves with the stock, so recomputing an old entry at today's average would restate books that have already been closed.",
+    ),
+  costOfGoodsSold: zod
+    .number()
+    .nullish()
+    .describe(
+      "quantity x unitCostHt. Relieved on a sale (class 6); null otherwise.",
+    ),
 });
 export const ListTransactionsResponse = zod.array(ListTransactionsResponseItem);
 
@@ -268,6 +328,8 @@ export const createTransactionBodyAmountHtMin = 0;
 
 export const createTransactionBodyTvaRateMin = 0;
 export const createTransactionBodyTvaRateMax = 100;
+
+export const createTransactionBodyQuantityMin = 0;
 
 export const CreateTransactionBody = zod.object({
   date: zod.coerce.date(),
@@ -282,6 +344,18 @@ export const CreateTransactionBody = zod.object({
   status: zod.enum(["PAID", "UNPAID", "PARTIAL"]),
   thirdParty: zod.string().nullish(),
   category: zod.string().nullish(),
+  itemId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Optional stock article. A SALE naming one relieves inventory at the CUMP and records the cost; a PURCHASE naming one feeds it at amountHt \/ quantity. Entries without an itemId behave as before.",
+    ),
+  quantity: zod
+    .number()
+    .min(createTransactionBodyQuantityMin)
+    .nullish()
+    .describe("Required whenever itemId is given."),
 });
 
 export const DeleteTransactionParams = zod.object({
@@ -334,6 +408,13 @@ export const ListInventoryMovementsResponseItem = zod.object({
   direction: zod.enum(["IN", "OUT"]),
   unitCostHt: zod.number(),
   note: zod.string().nullish(),
+  transactionId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "The journal entry that generated this movement, if any. Null for movements entered by hand on the Stocks page.",
+    ),
 });
 export const ListInventoryMovementsResponse = zod.array(
   ListInventoryMovementsResponseItem,
@@ -351,7 +432,13 @@ export const CreateInventoryMovementBody = zod.object({
   date: zod.coerce.date(),
   quantity: zod.number().min(createInventoryMovementBodyQuantityMin),
   direction: zod.enum(["IN", "OUT"]),
-  unitCostHt: zod.number().min(createInventoryMovementBodyUnitCostHtMin),
+  unitCostHt: zod
+    .number()
+    .min(createInventoryMovementBodyUnitCostHtMin)
+    .nullish()
+    .describe(
+      "Required for an IN. Optional for an OUT, where omitting it (or sending 0) applies the article's current CUMP.",
+    ),
   note: zod.string().nullish(),
 });
 
@@ -517,6 +604,24 @@ export const GetRecentActivityResponseItem = zod.object({
     .string()
     .nullish()
     .describe("e.g. RENT, ELECTRICITY, SUPPLIES, RAW_MATERIALS"),
+  itemId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe("Stock article this entry moved, if any"),
+  quantity: zod.number().nullish().describe("Quantity of the article moved"),
+  unitCostHt: zod
+    .number()
+    .nullish()
+    .describe(
+      "The CUMP applied when this entry was posted. Frozen at posting time: CUMP moves with the stock, so recomputing an old entry at today's average would restate books that have already been closed.",
+    ),
+  costOfGoodsSold: zod
+    .number()
+    .nullish()
+    .describe(
+      "quantity x unitCostHt. Relieved on a sale (class 6); null otherwise.",
+    ),
 });
 export const GetRecentActivityResponse = zod.array(
   GetRecentActivityResponseItem,
@@ -530,4 +635,161 @@ export const GetTvaSummaryResponse = zod.object({
   tvaCollectee: zod.number(),
   tvaDeductible: zod.number(),
   net: zod.number(),
+});
+
+/**
+ * Newest first. Acknowledged alerts are hidden by default — a business owner who has dealt with a text should not have to keep scrolling past it.
+
+ * @summary Journal Officiel texts judged relevant to this company
+ */
+export const listLegalAlertsQueryIncludeAcknowledgedDefault = false;
+
+export const ListLegalAlertsQueryParams = zod.object({
+  includeAcknowledged: zod.coerce
+    .boolean()
+    .default(listLegalAlertsQueryIncludeAcknowledgedDefault),
+});
+
+export const ListLegalAlertsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  documentId: zod.string().uuid(),
+  docKind: zod
+    .string()
+    .describe("e.g. Décret exécutif, Arrêté interministériel"),
+  docNumber: zod.string().nullish(),
+  titleFr: zod.string().nullish(),
+  titleAr: zod.string().nullish(),
+  summaryFr: zod
+    .string()
+    .nullish()
+    .describe("One sentence, written for a non-lawyer"),
+  summaryAr: zod.string().nullish(),
+  publishedOn: zod.coerce.date().nullish(),
+  pageFrom: zod.number().nullish(),
+  year: zod.number(),
+  issueNumber: zod.number().describe("Journal Officiel issue number"),
+  relevance: zod.enum(["HIGH", "MEDIUM", "LOW"]),
+  matchScore: zod.number(),
+  matchedOn: zod
+    .object({
+      sectors: zod.array(zod.string()),
+      keywords: zod.array(zod.string()),
+      legalForm: zod.boolean(),
+      taxRegime: zod.boolean(),
+    })
+    .describe(
+      "The signals that made this text relevant. Structured rather than prose so the client can phrase the reason in the user's own words — a business owner needs to see \*why\* a text concerns them, in a sentence they can read, not an opaque score.\n",
+    ),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListLegalAlertsResponse = zod.array(ListLegalAlertsResponseItem);
+
+/**
+ * @summary Mark a legal alert as dealt with
+ */
+export const AcknowledgeLegalAlertParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AcknowledgeLegalAlertResponse = zod.object({
+  id: zod.string().uuid(),
+  documentId: zod.string().uuid(),
+  docKind: zod
+    .string()
+    .describe("e.g. Décret exécutif, Arrêté interministériel"),
+  docNumber: zod.string().nullish(),
+  titleFr: zod.string().nullish(),
+  titleAr: zod.string().nullish(),
+  summaryFr: zod
+    .string()
+    .nullish()
+    .describe("One sentence, written for a non-lawyer"),
+  summaryAr: zod.string().nullish(),
+  publishedOn: zod.coerce.date().nullish(),
+  pageFrom: zod.number().nullish(),
+  year: zod.number(),
+  issueNumber: zod.number().describe("Journal Officiel issue number"),
+  relevance: zod.enum(["HIGH", "MEDIUM", "LOW"]),
+  matchScore: zod.number(),
+  matchedOn: zod
+    .object({
+      sectors: zod.array(zod.string()),
+      keywords: zod.array(zod.string()),
+      legalForm: zod.boolean(),
+      taxRegime: zod.boolean(),
+    })
+    .describe(
+      "The signals that made this text relevant. Structured rather than prose so the client can phrase the reason in the user's own words — a business owner needs to see \*why\* a text concerns them, in a sentence they can read, not an opaque score.\n",
+    ),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * Matching happens as documents arrive, so a company that declared its sector after the crawl would otherwise see nothing until the next issue is published. This recomputes the whole set on demand.
+
+ * @summary Re-match the stored corpus against this company's current identity
+ */
+export const RefreshLegalAlertsResponse = zod.object({
+  refreshed: zod.number().describe("Number of alerts written"),
+});
+
+/**
+ * The Rapports page detects findings in the browser — it is client-side by convention, and re-deriving its aggregates server-side would create a second source of truth. So only the findings cross the wire, never the ledger: the API key stays here and the company's rows stay in the browser.
+Gemini receives figures that deterministic code already produced and is asked to order and explain them. It is never asked to compute anything — the numbers in the narrative are the ones in the request.
+
+ * @summary Explain and prioritise findings the browser already computed
+ */
+export const NarrateInsightsBody = zod.object({
+  periodFrom: zod.coerce.date().nullish(),
+  periodTo: zod.coerce.date().nullish(),
+  findings: zod.array(
+    zod
+      .object({
+        ruleId: zod
+          .string()
+          .describe(
+            "The knowledge-base key. Opaque to the server, which only echoes it back — the client owns the rules and their wording.\n",
+          ),
+        severity: zod.enum(["CRITICAL", "WARNING", "INFO"]),
+        title: zod.string(),
+        evidence: zod
+          .array(zod.string())
+          .optional()
+          .describe(
+            "The figures behind the finding, already formatted for reading",
+          ),
+        metrics: zod
+          .record(zod.string(), zod.number())
+          .optional()
+          .describe(
+            "The same figures unformatted — what the narration may reason over",
+          ),
+        periodRef: zod.string(),
+        subject: zod.string().nullish(),
+      })
+      .describe(
+        "One observation, as the browser computed it. The field names mirror the client's `Finding` exactly, because this is a mirror of that type rather than a re-modelling of it.\n",
+      ),
+  ),
+});
+
+export const NarrateInsightsResponse = zod.object({
+  summary: zod
+    .string()
+    .describe("Two or three sentences, in plain French, for a business owner"),
+  priorities: zod.array(
+    zod.object({
+      ruleId: zod
+        .string()
+        .describe("Echoes one of the ruleIds in the request — never a new one"),
+      whyItMatters: zod.string(),
+      action: zod.string(),
+    }),
+  ),
+  model: zod.string(),
+  cached: zod
+    .boolean()
+    .describe("True when this is a stored narrative for identical findings"),
 });

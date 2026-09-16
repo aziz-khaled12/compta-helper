@@ -6,3 +6,5 @@ export * from "./transactions";
 export * from "./inventory";
 export * from "./employees";
 export * from "./payrolls";
+export * from "./legal";
+export * from "./insights";

@@ -16,4 +16,6 @@ export interface InventoryMovement {
   direction: InventoryMovementDirection;
   unitCostHt: number;
   note?: string | null;
+  /** The journal entry that generated this movement, if any. Null for movements entered by hand on the Stocks page. */
+  transactionId?: string | null;
 }

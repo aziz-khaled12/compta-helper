@@ -5,6 +5,7 @@
  * DJERDJERA Comptable API - Algerian small-business accounting
  * OpenAPI spec version: 0.1.0
  */
+import type { CompanyInputTaxRegime } from "./companyInputTaxRegime";
 
 export interface CompanyInput {
   /** @minLength 1 */
@@ -15,4 +16,8 @@ export interface CompanyInput {
   ai: string;
   address?: string | null;
   legalForm?: string | null;
+  /** Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50. */
+  taxRegime?: CompanyInputTaxRegime;
+  /** Sector of activity, as a code from the @workspace/sectors catalogue. Validated server-side against that catalogue. `sectorLabel` is derived from it and is therefore not accepted on input. */
+  sectorCode?: string | null;
 }

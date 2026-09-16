@@ -5,6 +5,7 @@
  * DJERDJERA Comptable API - Algerian small-business accounting
  * OpenAPI spec version: 0.1.0
  */
+import type { CompanyTaxRegime } from "./companyTaxRegime";
 
 export interface Company {
   id: string;
@@ -16,5 +17,11 @@ export interface Company {
   address?: string | null;
   /** e.g. EURL, SARL, SNC */
   legalForm?: string | null;
+  /** Algerian tax system: FORFAITAIRE (النظام الجزافي) files the G12, REEL (النظام الحقيقي) files the G50. */
+  taxRegime?: CompanyTaxRegime;
+  /** Sector of activity, as a code from the @workspace/sectors catalogue. Used to filter Journal Officiel decrees down to the ones that concern this company. Deliberately not an enum here: the catalogue is TypeScript and is the single source of truth for valid codes, so an enum duplicated into this file would drift. The server validates the code against the catalogue and rejects an unknown one. */
+  sectorCode?: string | null;
+  /** Human-readable sector name, derived server-side from sectorCode. Returned only — a client cannot set it, so the stored label can never disagree with the code it belongs to. */
+  sectorLabel?: string | null;
   createdAt: Date;
 }

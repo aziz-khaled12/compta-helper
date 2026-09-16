@@ -47,3 +47,14 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+.env
+
+# Agents
+.agents
+.claude
+.opencode
+CLAUDE.md
+replit.md
+
+# Throwaway debugging harnesses (scripts/_tmp_*.ts) — never committed.
+scripts/_tmp_*.ts

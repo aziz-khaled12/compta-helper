@@ -25,4 +25,11 @@ export interface TransactionInput {
   status: TransactionInputStatus;
   thirdParty?: string | null;
   category?: string | null;
+  /** Optional stock article. A SALE naming one relieves inventory at the CUMP and records the cost; a PURCHASE naming one feeds it at amountHt / quantity. Entries without an itemId behave as before. */
+  itemId?: string | null;
+  /**
+   * Required whenever itemId is given.
+   * @minimum 0
+   */
+  quantity?: number | null;
 }
