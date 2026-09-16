@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "pnpm install --frozen-lockfile --prod=false",
+  "installCommand": "pnpm install --frozen-lockfile --no-prod",
   "buildCommand": "pnpm --filter @workspace/client run build",
   "outputDirectory": "artifacts/client/dist/public",
   "rewrites": [

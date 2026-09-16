@@ -28,7 +28,7 @@ services:
     healthCheckPath: /api/healthz
     buildCommand: >-
       npm install -g pnpm@12.4.1 &&
-      pnpm install --frozen-lockfile --prod=false &&
+      pnpm install --frozen-lockfile --no-prod &&
       pnpm --filter @workspace/server run build
     startCommand: node --enable-source-maps artifacts/server/dist/index.mjs
     envVars:
