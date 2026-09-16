@@ -1,0 +1,31 @@
+# ============================================================================
+# Vercel upload exclusions.
+#
+# `.gitignore` is not enough here. `vercel deploy` uploads the working tree,
+# and without this file it sent all nine node_modules trees (44,729 files) and
+# tripped the 15,000-file limit before the build ever started.
+#
+# `.env` is the line that matters. It holds DATABASE_URL and GEMINI_API_KEY,
+# and a CLI deploy that uploads it hands production secrets to the build
+# container. Vercel's own env vars are set in the project settings, not here —
+# the client build reads none of them.
+# ============================================================================
+
+node_modules
+.env
+.env.*
+
+.git
+.vercel
+
+dist
+tmp
+*.tsbuildinfo
+
+# Scratch harnesses, agent config, and docs. None of it is part of the build.
+scripts/_tmp_*.ts
+.agents
+.claude
+.opencode
+CLAUDE.md
+replit.md
