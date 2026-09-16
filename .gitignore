@@ -58,3 +58,6 @@ replit.md
 
 # Throwaway debugging harnesses (scripts/_tmp_*.ts) — never committed.
 scripts/_tmp_*.ts
+
+# Vercel CLI link state (project/org ids for this checkout).
+.vercel
