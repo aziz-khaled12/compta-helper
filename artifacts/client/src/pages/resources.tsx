@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import {
@@ -32,23 +33,24 @@ const assetSchema = z.object({
 });
 
 function AmortizationSchedule({ assetId }: { assetId: string }) {
+  const { t } = useTranslation();
   const { data: schedule, isLoading } = useGetAssetAmortization(assetId);
 
-  if (isLoading) return <div className="p-4 text-sm text-muted-foreground text-center">Chargement du tableau d'amortissement...</div>;
-  if (!schedule?.length) return <div className="p-4 text-sm text-muted-foreground text-center">Aucune donnée</div>;
+  if (isLoading) return <div className="p-4 text-sm text-muted-foreground text-center">{t("assets.scheduleLoading")}</div>;
+  if (!schedule?.length) return <div className="p-4 text-sm text-muted-foreground text-center">{t("assets.scheduleEmpty")}</div>;
 
   return (
     <div className="p-4 bg-muted/30 rounded-b-md border-x border-b">
       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
         <Calculator className="h-4 w-4" />
-        Tableau d'amortissement
+        {t("assets.scheduleTitle")}
       </h4>
       <div className="max-h-64 overflow-y-auto rounded-md border bg-background">
         <Table>
           <TableHeader className="bg-muted sticky top-0">
             <TableRow>
-              <TableHead className="py-2 text-xs">Mois</TableHead>
-              <TableHead className="py-2 text-xs text-right">Amortissement</TableHead>
+              <TableHead className="py-2 text-xs">{t("assets.scheduleMonth")}</TableHead>
+              <TableHead className="py-2 text-xs text-right">{t("assets.scheduleAmount")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,6 +68,7 @@ function AmortizationSchedule({ assetId }: { assetId: string }) {
 }
 
 export default function Assets() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: assets, isLoading } = useListAssets();
   const createAsset = useCreateAsset();
@@ -89,26 +92,26 @@ export default function Assets() {
       { data: values },
       {
         onSuccess: () => {
-          toast.success("Immobilisation ajoutée");
+          toast.success(t("assets.toast.added"));
           setIsOpen(false);
           form.reset();
           queryClient.invalidateQueries({ queryKey: getListAssetsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },
         onError: () => {
-          toast.error("Erreur lors de l'ajout");
+          toast.error(t("assets.toast.addError"));
         }
       }
     );
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Supprimer cette immobilisation et son tableau d'amortissement ?")) {
+    if (confirm(t("assets.confirmDelete"))) {
       deleteAsset.mutate(
         { id },
         {
           onSuccess: () => {
-            toast.success("Immobilisation supprimée");
+            toast.success(t("assets.toast.deleted"));
             queryClient.invalidateQueries({ queryKey: getListAssetsQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           }
@@ -123,20 +126,20 @@ export default function Assets() {
     <div className="space-y-8 pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Immobilisations</h1>
-          <p className="text-muted-foreground mt-1">Gestion du parc et amortissements automatiques</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("assets.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("assets.subtitle")}</p>
         </div>
         
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Nouvelle immobilisation
+              {t("assets.newAsset")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Ajouter un équipement / matériel</DialogTitle>
+              <DialogTitle>{t("assets.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
@@ -145,9 +148,9 @@ export default function Assets() {
                   name="label"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Désignation</FormLabel>
+                      <FormLabel>{t("assets.label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Machine outil CX-200" {...field} />
+                        <Input placeholder={t("assets.labelPlaceholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -160,9 +163,9 @@ export default function Assets() {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Catégorie</FormLabel>
+                        <FormLabel>{t("assets.category")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Matériel Industriel" {...field} />
+                          <Input placeholder={t("assets.categoryPlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -173,7 +176,7 @@ export default function Assets() {
                     name="purchaseDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Date d'acquisition</FormLabel>
+                        <FormLabel>{t("assets.purchaseDate")}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -189,7 +192,7 @@ export default function Assets() {
                     name="costHt"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Coût d'acquisition HT (DA)</FormLabel>
+                        <FormLabel>{t("assets.cost")}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -202,7 +205,7 @@ export default function Assets() {
                     name="lifeYears"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Durée de vie (Années)</FormLabel>
+                        <FormLabel>{t("assets.lifeYears")}</FormLabel>
                         <FormControl>
                           <Input type="number" {...field} />
                         </FormControl>
@@ -213,7 +216,7 @@ export default function Assets() {
                 </div>
 
                 <Button type="submit" className="w-full mt-6" disabled={createAsset.isPending}>
-                  Enregistrer et générer l'amortissement
+                  {t("assets.submit")}
                 </Button>
               </form>
             </Form>
@@ -228,7 +231,7 @@ export default function Assets() {
               <Briefcase className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Valeur Nette Comptable Globale</p>
+              <p className="text-sm font-medium text-muted-foreground">{t("assets.bookValue")}</p>
               <h2 className="text-3xl font-bold">{formatMoney(totalBookValue)}</h2>
             </div>
           </div>
@@ -237,22 +240,22 @@ export default function Assets() {
 
       <Card className="bg-card">
         <CardHeader>
-          <CardTitle>Liste des immobilisations</CardTitle>
-          <CardDescription>Cliquez sur une ligne pour voir le détail des amortissements</CardDescription>
+          <CardTitle>{t("assets.listTitle")}</CardTitle>
+          <CardDescription>{t("assets.listSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {assets?.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              Aucune immobilisation enregistrée.
+              {t("assets.empty")}
             </div>
           ) : (
             <Accordion type="single" collapsible className="w-full">
               <div className="px-6 py-3 border-b bg-muted/30 grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
-                <div className="col-span-3">Désignation</div>
-                <div className="col-span-2">Acquisition</div>
-                <div className="col-span-2 text-right">Coût HT</div>
-                <div className="col-span-2 text-right">Amorti</div>
-                <div className="col-span-2 text-right">VNC</div>
+                <div className="col-span-3">{t("assets.colLabel")}</div>
+                <div className="col-span-2">{t("assets.colPurchase")}</div>
+                <div className="col-span-2 text-right">{t("assets.colCost")}</div>
+                <div className="col-span-2 text-right">{t("assets.colDepreciation")}</div>
+                <div className="col-span-2 text-right">{t("assets.colBookValue")}</div>
                 <div className="col-span-1"></div>
               </div>
               
@@ -266,7 +269,7 @@ export default function Assets() {
                       </div>
                       <div className="col-span-2 text-sm">
                         {formatDate(asset.purchaseDate)}
-                        <div className="text-xs text-muted-foreground">{asset.lifeYears} ans</div>
+                        <div className="text-xs text-muted-foreground">{t("assets.years", { count: asset.lifeYears })}</div>
                       </div>
                       <div className="col-span-2 text-right text-sm">{formatMoney(asset.costHt)}</div>
                       <div className="col-span-2 text-right text-sm text-destructive">{formatMoney(asset.accumulatedDepreciation)}</div>

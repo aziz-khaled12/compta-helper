@@ -19,12 +19,15 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { OnboardingState } from "../hooks/useOnboardingState";
-import {
-  INVENTORY_CATEGORY_LABELS,
-  inventorySchema,
-  type InventoryData,
-} from "../types";
+import { inventorySchema, type InventoryData } from "../types";
+
+const INVENTORY_CATEGORIES = [
+  "RAW_MATERIAL",
+  "FINISHED_GOOD",
+  "SUPPLY",
+] as const;
 
 function emptyItem(): InventoryData {
   return {
@@ -37,6 +40,7 @@ function emptyItem(): InventoryData {
 }
 
 export function Inventory({ state }: { state: OnboardingState }) {
+  const { t } = useTranslation();
   const form = useForm<InventoryData>({
     resolver: zodResolver(inventorySchema),
     defaultValues: emptyItem(),
@@ -60,9 +64,8 @@ export function Inventory({ state }: { state: OnboardingState }) {
       pending.unitCostHt > 0;
 
     if (started && !parsed.success) {
-      toast.error("Article incomplet", {
-        description:
-          "Complétez la désignation, la quantité et le coût unitaire, ou videz les champs pour l'ignorer.",
+      toast.error(t("onboarding.item.incomplete"), {
+        description: t("onboarding.item.incompleteDesc"),
       });
       return;
     }
@@ -76,7 +79,7 @@ export function Inventory({ state }: { state: OnboardingState }) {
       {state.inventory.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">
-            {state.inventory.length} article(s) ajouté(s)
+            {t("onboarding.itemsAdded", { count: state.inventory.length })}
           </p>
           {state.inventory.map((item, index) => (
             <div
@@ -86,8 +89,12 @@ export function Inventory({ state }: { state: OnboardingState }) {
               <div>
                 <p className="text-sm font-medium">{item.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {INVENTORY_CATEGORY_LABELS[item.category]} — {item.initialQty}{" "}
-                  {item.unit} @ {item.unitCostHt.toLocaleString("fr-DZ")} DA/u
+                  {t("onboarding.item.rowSummary", {
+                    category: t(`consts.inventory.category.${item.category}`),
+                    qty: item.initialQty,
+                    unit: item.unit,
+                    cost: item.unitCostHt.toLocaleString("fr-DZ"),
+                  })}
                 </p>
               </div>
               <Button
@@ -108,16 +115,16 @@ export function Inventory({ state }: { state: OnboardingState }) {
           onSubmit={form.handleSubmit(addItem)}
           className="space-y-4 border rounded-xl p-4 bg-muted/10"
         >
-          <p className="text-sm font-semibold">Ajouter un article de stock</p>
+          <p className="text-sm font-semibold">{t("onboarding.addItem")}</p>
           <div className="grid gap-3 md:grid-cols-2">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Désignation *</FormLabel>
+                  <FormLabel>{t("onboarding.item.name")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="ex. Farine T45" {...field} />
+                    <Input placeholder={t("onboarding.item.namePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,7 +135,7 @@ export function Inventory({ state }: { state: OnboardingState }) {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Catégorie *</FormLabel>
+                  <FormLabel>{t("onboarding.item.category")}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
@@ -136,13 +143,11 @@ export function Inventory({ state }: { state: OnboardingState }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(INVENTORY_CATEGORY_LABELS).map(
-                        ([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ),
-                      )}
+                      {INVENTORY_CATEGORIES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {t(`consts.inventory.category.${value}`)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -154,9 +159,9 @@ export function Inventory({ state }: { state: OnboardingState }) {
               name="unit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Unité *</FormLabel>
+                  <FormLabel>{t("onboarding.item.unit")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="pièce / kg / L..." {...field} />
+                    <Input placeholder={t("onboarding.item.unitPlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,7 +172,7 @@ export function Inventory({ state }: { state: OnboardingState }) {
               name="initialQty"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantité initiale *</FormLabel>
+                  <FormLabel>{t("onboarding.item.initialQty")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -186,7 +191,7 @@ export function Inventory({ state }: { state: OnboardingState }) {
               name="unitCostHt"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Coût unitaire HT (DA) *</FormLabel>
+                  <FormLabel>{t("onboarding.item.unitCost")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -202,7 +207,7 @@ export function Inventory({ state }: { state: OnboardingState }) {
             />
           </div>
           <Button type="submit" variant="outline" size="sm" className="gap-2">
-            <Plus className="h-4 w-4" /> Ajouter
+            <Plus className="h-4 w-4" /> {t("onboarding.employee.add")}
           </Button>
         </form>
       </Form>
@@ -214,10 +219,10 @@ export function Inventory({ state }: { state: OnboardingState }) {
           onClick={state.backStep}
           className="gap-2"
         >
-          <ChevronLeft className="h-4 w-4" /> Précédent
+          <ChevronLeft className="h-4 w-4" /> {t("onboarding.back")}
         </Button>
         <Button type="button" onClick={next} className="gap-2">
-          Suivant <ChevronRight className="h-4 w-4" />
+          {t("onboarding.next")} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

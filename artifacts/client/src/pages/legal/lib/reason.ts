@@ -1,4 +1,5 @@
 import { findSector, sectorLabelFor } from "@workspace/sectors";
+import i18n from "@/i18n";
 import type {
   LegalAlert,
   LegalAlertMatch,
@@ -28,11 +29,9 @@ import type {
  * "HIGH" reads as a system state; "Priorité élevée" reads as an instruction
  * about what to do with it.
  */
-export const RELEVANCE_LABELS: Record<LegalAlertRelevance, string> = {
-  HIGH: "Priorité élevée",
-  MEDIUM: "À examiner",
-  LOW: "Pour information",
-};
+export function relevanceLabel(relevance: LegalAlertRelevance): string {
+  return i18n.t(`legal.relevance.${relevance}`);
+}
 
 export interface AlertExplanation {
   /** The one-line answer to "why am I seeing this?" */
@@ -70,32 +69,38 @@ export function explainMatch(match: LegalAlertMatch): AlertExplanation {
   const namedSectors = match.sectors.filter((code) => findSector(code));
 
   if (namedSectors.length > 0) {
-    details.push(`Secteurs visés : ${list(namedSectors.map(sectorLabelFor))}`);
+    details.push(
+      i18n.t("legal.match.sectors", {
+        list: list(namedSectors.map(sectorLabelFor)),
+      }),
+    );
   }
 
   if (match.keywords.length > 0) {
-    details.push(`Thèmes abordés : ${list(match.keywords)}`);
+    details.push(
+      i18n.t("legal.match.keywords", { list: list(match.keywords) }),
+    );
   }
 
   if (match.legalForm) {
     // The boolean says a restriction exists, not which form it names — the
     // company's own form is the only one worth stating, and the server does not
     // send it. A generic sentence is honest; naming a form would guess.
-    details.push("Vise spécifiquement votre forme juridique");
+    details.push(i18n.t("legal.match.legalForm"));
   }
 
   if (match.taxRegime) {
-    details.push("Vise spécifiquement votre régime fiscal");
+    details.push(i18n.t("legal.match.taxRegime"));
   }
 
   // Based on the *named* sectors, not the raw ones: a row whose only sector
   // signal is an unresolvable code must fall through to the weaker headline
   // rather than claim a sector link it cannot name.
   const headline = namedSectors.length
-    ? "Ce texte concerne directement votre secteur d'activité."
+    ? i18n.t("legal.match.headlineSector")
     : match.legalForm || match.taxRegime
-      ? "Ce texte s'applique spécifiquement à votre situation."
-      : "Ce texte peut vous concerner : il touche à des domaines qui visent toutes les entreprises.";
+      ? i18n.t("legal.match.headlineSituation")
+      : i18n.t("legal.match.headlineGeneric");
 
   return { headline, details };
 }
@@ -104,14 +109,14 @@ export function explainMatch(match: LegalAlertMatch): AlertExplanation {
  * The document as a heading: "Décret exécutif n° 25-225".
  *
  * Unlike the matcher's `kind`, which is an internal classification, this is
- * display text and stays in French because the whole application is. The number
- * is appended only when there is one — plenty of texts (arrêtés, communications)
- * genuinely have none, and "n° undefined" is worse than silence.
+ * display text and follows the active language. The number is appended only when
+ * there is one — plenty of texts (arrêtés, communications) genuinely have none,
+ * and "n° undefined" is worse than silence.
  */
 export function documentHeading(alert: LegalAlert): string {
-  const kind = alert.docKind?.trim() || "Texte";
+  const kind = alert.docKind?.trim() || i18n.t("legal.textFallback");
   const number = alert.docNumber?.trim();
-  return number ? `${kind} n° ${number}` : kind;
+  return number ? i18n.t("legal.docHeading", { kind, number }) : kind;
 }
 
 /**
@@ -121,6 +126,8 @@ export function documentHeading(alert: LegalAlert): string {
  * or their accountant — go and read the original text.
  */
 export function journalReference(alert: LegalAlert): string {
-  const base = `Journal Officiel n° ${alert.issueNumber} de ${alert.year}`;
-  return alert.pageFrom ? `${base}, page ${alert.pageFrom}` : base;
+  const vars = { issue: alert.issueNumber, year: alert.year };
+  return alert.pageFrom
+    ? i18n.t("legal.journalRefPage", { ...vars, page: alert.pageFrom })
+    : i18n.t("legal.journalRef", vars);
 }

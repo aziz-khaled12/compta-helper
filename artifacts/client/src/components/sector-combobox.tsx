@@ -1,5 +1,6 @@
 import { useMemo, useState, type ComponentPropsWithRef } from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SECTORS, SECTOR_GROUPS, findSector, normalizeText } from "@workspace/sectors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ export function SectorCombobox({
   className,
   ...triggerProps
 }: SectorComboboxProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const selected = findSector(value);
 
@@ -100,13 +102,13 @@ export function SectorCombobox({
               className,
             )}
           >
-            <span className="truncate">{triggerLabel || "Choisir une activité…"}</span>
+            <span className="truncate">{triggerLabel || t("sector.choose")}</span>
             <span className="flex items-center gap-1 shrink-0 ml-2">
               {value && !disabled && (
                 <span
                   role="button"
                   tabIndex={0}
-                  aria-label="Retirer le secteur"
+                  aria-label={t("sector.remove")}
                   className="rounded-sm opacity-60 hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -132,9 +134,9 @@ export function SectorCombobox({
           align="start"
         >
           <Command>
-            <CommandInput placeholder="Rechercher une activité…" />
+            <CommandInput placeholder={t("sector.search")} />
             <CommandList className="max-h-72">
-              <CommandEmpty>Aucune activité trouvée.</CommandEmpty>
+              <CommandEmpty>{t("sector.empty")}</CommandEmpty>
               {byGroup.map(({ group, sectors }) => (
                 <CommandGroup key={group} heading={group}>
                   {sectors.map((sector) => (
@@ -178,7 +180,7 @@ export function SectorCombobox({
       <p className="text-xs text-muted-foreground">
         {selected
           ? selected.description
-          : "Sert à filtrer les textes juridiques qui vous concernent."}
+          : t("sector.hint")}
       </p>
     </div>
   );

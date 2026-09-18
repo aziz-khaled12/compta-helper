@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { OnboardingState } from "../hooks/useOnboardingState";
 import { assetSchema, type AssetData } from "../types";
 
@@ -27,6 +28,7 @@ function emptyAsset(): AssetData {
 }
 
 export function Assets({ state }: { state: OnboardingState }) {
+  const { t } = useTranslation();
   const form = useForm<AssetData>({
     resolver: zodResolver(assetSchema),
     defaultValues: emptyAsset(),
@@ -56,9 +58,8 @@ export function Assets({ state }: { state: OnboardingState }) {
     // Refusing to advance beats dropping the row: the toast says which fields
     // to complete, and clearing them is how the user says "never mind".
     if (started && !parsed.success) {
-      toast.error("Immobilisation incomplète", {
-        description:
-          "Complétez la désignation, la catégorie et la valeur d'acquisition, ou videz les champs pour l'ignorer.",
+      toast.error(t("onboarding.asset.incomplete"), {
+        description: t("onboarding.asset.incompleteDesc"),
       });
       return;
     }
@@ -72,7 +73,7 @@ export function Assets({ state }: { state: OnboardingState }) {
       {state.assets.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">
-            {state.assets.length} immobilisation(s) ajoutée(s)
+            {t("onboarding.assetsAdded", { count: state.assets.length })}
           </p>
           {state.assets.map((asset, index) => (
             <div
@@ -82,7 +83,10 @@ export function Assets({ state }: { state: OnboardingState }) {
               <div>
                 <p className="text-sm font-medium">{asset.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  {asset.category} — {asset.costHt.toLocaleString("fr-DZ")} DA HT
+                  {t("onboarding.asset.rowSummary", {
+                    category: asset.category,
+                    cost: asset.costHt.toLocaleString("fr-DZ"),
+                  })}
                 </p>
               </div>
               <Button
@@ -103,16 +107,16 @@ export function Assets({ state }: { state: OnboardingState }) {
           onSubmit={form.handleSubmit(addAsset)}
           className="space-y-4 border rounded-xl p-4 bg-muted/10"
         >
-          <p className="text-sm font-semibold">Ajouter une immobilisation</p>
+          <p className="text-sm font-semibold">{t("onboarding.addAsset")}</p>
           <div className="grid gap-3 md:grid-cols-2">
             <FormField
               control={form.control}
               name="label"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Désignation *</FormLabel>
+                  <FormLabel>{t("onboarding.asset.label")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="ex. Véhicule utilitaire" {...field} />
+                    <Input placeholder={t("onboarding.asset.labelPlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -123,9 +127,9 @@ export function Assets({ state }: { state: OnboardingState }) {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Catégorie *</FormLabel>
+                  <FormLabel>{t("onboarding.asset.category")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="ex. Matériel roulant" {...field} />
+                    <Input placeholder={t("onboarding.asset.categoryPlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,7 +140,7 @@ export function Assets({ state }: { state: OnboardingState }) {
               name="costHt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valeur d'acquisition HT (DA) *</FormLabel>
+                  <FormLabel>{t("onboarding.asset.cost")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -155,7 +159,7 @@ export function Assets({ state }: { state: OnboardingState }) {
               name="purchaseDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date d'acquisition *</FormLabel>
+                  <FormLabel>{t("onboarding.asset.purchaseDate")}</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -168,7 +172,7 @@ export function Assets({ state }: { state: OnboardingState }) {
               name="lifeYears"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Durée de vie (années) *</FormLabel>
+                  <FormLabel>{t("onboarding.asset.lifeYears")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -186,7 +190,7 @@ export function Assets({ state }: { state: OnboardingState }) {
               name="residualValue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valeur résiduelle (DA)</FormLabel>
+                  <FormLabel>{t("onboarding.asset.residualValue")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -202,7 +206,7 @@ export function Assets({ state }: { state: OnboardingState }) {
             />
           </div>
           <Button type="submit" variant="outline" size="sm" className="gap-2">
-            <Plus className="h-4 w-4" /> Ajouter
+            <Plus className="h-4 w-4" /> {t("onboarding.employee.add")}
           </Button>
         </form>
       </Form>
@@ -214,10 +218,10 @@ export function Assets({ state }: { state: OnboardingState }) {
           onClick={state.backStep}
           className="gap-2"
         >
-          <ChevronLeft className="h-4 w-4" /> Précédent
+          <ChevronLeft className="h-4 w-4" /> {t("onboarding.back")}
         </Button>
         <Button type="button" onClick={next} className="gap-2">
-          Suivant <ChevronRight className="h-4 w-4" />
+          {t("onboarding.next")} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

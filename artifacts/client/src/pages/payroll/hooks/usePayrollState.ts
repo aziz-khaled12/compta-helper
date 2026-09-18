@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 import {
   useListPayrolls,
   getListPayrollsQueryKey,
@@ -31,18 +32,18 @@ export function usePayrollState() {
       { data: { employeeId, monthYear: selectedMonth } },
       {
         onSuccess: () => {
-          toast.success("Bulletin généré avec succès");
+          toast.success(i18n.t("payroll.toast.generated"));
           queryClient.invalidateQueries({ queryKey: getListPayrollsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },
-        onError: () => toast.error("Erreur de génération"),
+        onError: () => toast.error(i18n.t("payroll.toast.generateError")),
       },
     );
   };
 
   const handleGenerateAll = async () => {
     if (!employees.length) return;
-    toast.info("Génération en cours...");
+    toast.info(i18n.t("payroll.toast.generating"));
     for (const emp of employees) {
       const exists = payrolls.find((p) => p.employeeId === emp.id);
       if (!exists) {
@@ -51,17 +52,17 @@ export function usePayrollState() {
         });
       }
     }
-    toast.success("Bulletins générés");
+    toast.success(i18n.t("payroll.toast.generatedAll"));
     queryClient.invalidateQueries({ queryKey: getListPayrollsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Supprimer ce bulletin de paie ?")) {
+    if (confirm(i18n.t("payroll.confirmDelete"))) {
       deletePayroll.mutate({ id }, {
         onSuccess: () => {
-          toast.success("Bulletin supprimé");
+          toast.success(i18n.t("payroll.toast.deleted"));
           queryClient.invalidateQueries({ queryKey: getListPayrollsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },

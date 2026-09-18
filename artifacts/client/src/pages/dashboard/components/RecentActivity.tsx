@@ -1,15 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
 import { Link } from "wouter";
 import { useDashboardState } from "../hooks/useDashboardState";
 
 export function RecentActivity({ state }: { state: ReturnType<typeof useDashboardState> }) {
+  const { t } = useTranslation();
   const { activity } = state;
   return (
     <Card className="col-span-3">
-      <CardHeader><CardTitle>Activité Récente</CardTitle><CardDescription>Dernières opérations</CardDescription></CardHeader>
+      <CardHeader><CardTitle>{t("dashboard.activity.title")}</CardTitle><CardDescription>{t("dashboard.activity.subtitle")}</CardDescription></CardHeader>
       <CardContent>
         <div className="space-y-4">
           {activity?.slice(0, 5).map((item, i) => (
@@ -20,7 +22,7 @@ export function RecentActivity({ state }: { state: ReturnType<typeof useDashboar
                 </div>
                 <div>
                   <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.thirdParty || 'Divers'}</p>
+                  <p className="text-xs text-muted-foreground">{item.thirdParty || t("dashboard.activity.misc")}</p>
                 </div>
               </div>
               <div className={`text-sm font-semibold ${item.type === 'SALE' ? 'text-emerald-600' : 'text-foreground'}`}>
@@ -29,7 +31,7 @@ export function RecentActivity({ state }: { state: ReturnType<typeof useDashboar
             </div>
           ))}
         </div>
-        <div className="mt-4 pt-4 border-t"><Link href="/journal"><Button variant="outline" className="w-full">Voir tout le journal</Button></Link></div>
+        <div className="mt-4 pt-4 border-t"><Link href="/journal"><Button variant="outline" className="w-full">{t("dashboard.activity.viewAll")}</Button></Link></div>
       </CardContent>
     </Card>
   );

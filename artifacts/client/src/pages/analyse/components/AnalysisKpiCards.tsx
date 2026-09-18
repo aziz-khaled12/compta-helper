@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Percent, Wallet, Package, Receipt, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
 import type { KpiSnapshot } from "@/lib/analytics/metrics";
 
@@ -14,6 +15,7 @@ import type { KpiSnapshot } from "@/lib/analytics/metrics";
  * direction is good from a signed number, so the card says it.
  */
 export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
+  const { t } = useTranslation();
   const treasury = kpi.cash + kpi.bank;
   const receivables = kpi.receivables;
 
@@ -22,14 +24,14 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Chiffre d'affaires HT
+            {t("analyse.kpi.revenue")}
           </CardTitle>
           <TrendingUp className="h-4 w-4 text-emerald-600" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatMoney(kpi.revenueHt)}</div>
           <p className="text-xs text-muted-foreground mt-1">
-            Ventes de la période, hors taxes
+            {t("analyse.kpi.revenueSub")}
           </p>
         </CardContent>
       </Card>
@@ -37,13 +39,11 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Marge brute
+            {t("analyse.kpi.margin")}
           </CardTitle>
           <Percent className="h-4 w-4 text-blue-600" />
         </CardHeader>
         <CardContent>
-          {/* "—" and not "0 %": a company with no sales has no margin to speak
-              of, and printing zero would read as a collapse in margin. */}
           <div className="text-2xl font-bold">
             {kpi.grossMarginPct === null
               ? "—"
@@ -53,8 +53,8 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {kpi.grossMarginPct === null
-              ? "Aucune vente sur la période"
-              : `${formatMoney(kpi.grossMarginHt)} après coût des marchandises`}
+              ? t("analyse.kpi.noSales")
+              : t("analyse.kpi.afterCogs", { amount: formatMoney(kpi.grossMarginHt) })}
           </p>
         </CardContent>
       </Card>
@@ -62,7 +62,7 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Trésorerie
+            {t("analyse.kpi.treasury")}
           </CardTitle>
           <Wallet className="h-4 w-4 text-blue-600" />
         </CardHeader>
@@ -73,7 +73,10 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
             {formatMoney(treasury)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {formatMoney(kpi.cash)} en caisse · {formatMoney(kpi.bank)} en banque
+            {t("analyse.kpi.treasurySub", {
+              cash: formatMoney(kpi.cash),
+              bank: formatMoney(kpi.bank),
+            })}
           </p>
         </CardContent>
       </Card>
@@ -81,14 +84,14 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Valeur du stock
+            {t("analyse.kpi.stockValue")}
           </CardTitle>
           <Package className="h-4 w-4 text-violet-600" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatMoney(kpi.stockValue)}</div>
           <p className="text-xs text-muted-foreground mt-1">
-            Au coût moyen pondéré
+            {t("analyse.kpi.stockSub")}
           </p>
         </CardContent>
       </Card>
@@ -96,7 +99,7 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            TVA
+            {t("analyse.kpi.tva")}
           </CardTitle>
           <Receipt className="h-4 w-4 text-orange-600" />
         </CardHeader>
@@ -109,7 +112,7 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
             {formatMoney(kpi.tvaNet)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {kpi.tvaNet > 0 ? "À décaisser" : "Crédit de TVA"}
+            {kpi.tvaNet > 0 ? t("analyse.kpi.tvaDue") : t("analyse.kpi.tvaCredit")}
           </p>
         </CardContent>
       </Card>
@@ -117,7 +120,7 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Impayés clients
+            {t("analyse.kpi.receivables")}
           </CardTitle>
           <Clock className="h-4 w-4 text-amber-600" />
         </CardHeader>
@@ -127,12 +130,15 @@ export function AnalysisKpiCards({ kpi }: { kpi: KpiSnapshot }) {
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {receivables.count === 0
-              ? "Aucune facture en attente"
-              : `${receivables.count} facture${receivables.count > 1 ? "s" : ""}${
+              ? t("analyse.kpi.noReceivables")
+              : [
+                  t("analyse.kpi.invoicesCount", { count: receivables.count }),
                   receivables.oldestDays !== null
-                    ? ` · la plus ancienne : ${receivables.oldestDays} jours`
-                    : ""
-                }`}
+                    ? t("analyse.kpi.oldestInvoice", { days: receivables.oldestDays })
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
           </p>
         </CardContent>
       </Card>

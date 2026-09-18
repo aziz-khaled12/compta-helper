@@ -19,10 +19,12 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 import { useJournalState } from "../hooks/useJournalState";
 import { Loader2 } from "lucide-react";
 
 export function TransactionForm({ state }: { state: ReturnType<typeof useJournalState> }) {
+  const { t } = useTranslation();
   const { isOpen, setIsOpen, form, tvaAmount, amountTtc, onSubmit, createTransaction, items } = state;
   const [price, setPrice] = useState("");
 
@@ -64,9 +66,9 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Enregistrer une opération</DialogTitle>
+          <DialogTitle>{t("journal.form.title")}</DialogTitle>
           <DialogDescription>
-            Renseignez les détails pour ajouter une écriture au livre journal.
+            {t("journal.form.description")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -82,17 +84,17 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type d'opération</FormLabel>
+                    <FormLabel>{t("journal.form.type")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner..." />
+                          <SelectValue placeholder={t("company.selectPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="SALE">Vente (Recette)</SelectItem>
-                        <SelectItem value="PURCHASE">Achat (Stock)</SelectItem>
-                        <SelectItem value="EXPENSE">Charge (Dépense)</SelectItem>
+                        <SelectItem value="SALE">{t("journal.form.typeSale")}</SelectItem>
+                        <SelectItem value="PURCHASE">{t("journal.form.typePurchase")}</SelectItem>
+                        <SelectItem value="EXPENSE">{t("journal.form.typeExpense")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -104,7 +106,7 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>{t("journal.form.date")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -120,9 +122,9 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="label"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Libellé *</FormLabel>
+                    <FormLabel>{t("journal.form.label")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Facture Vente #001, Loyer..." {...field} />
+                      <Input placeholder={t("journal.form.labelPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -133,9 +135,9 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="thirdParty"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tiers / Partenaire</FormLabel>
+                    <FormLabel>{t("journal.form.thirdParty")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Client SARL, Fournisseur..." {...field} value={field.value ?? ""} />
+                      <Input placeholder={t("journal.form.thirdPartyPlaceholder")} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,20 +152,20 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                   name="itemId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Article (optionnel)</FormLabel>
+                      <FormLabel>{t("journal.form.article")}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value ?? ""}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Aucun — écriture sans mouvement de stock" />
+                            <SelectValue placeholder={t("journal.form.articlePlaceholder")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {items.map((i) => (
                             <SelectItem key={i.id} value={i.id}>
-                              {i.name} — {i.balance} en stock
+                              {t("journal.form.articleStock", { name: i.name, balance: i.balance })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -172,9 +174,14 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                       <p className="text-xs text-muted-foreground">
                         {item
                           ? watchType === "SALE"
-                            ? `Sortie valorisée au CUMP de ${formatMoney(item.averageCost)} — coût total ${formatMoney(item.averageCost * (Number(watchQty) || 0))}.`
-                            : `Entrée valorisée au prix unitaire saisi (montant HT ÷ quantité). CUMP actuel : ${formatMoney(item.averageCost)}.`
-                          : "Sans article, l'écriture ne touche pas le stock."}
+                            ? t("journal.form.articleHintSale", {
+                                cost: formatMoney(item.averageCost),
+                                total: formatMoney(item.averageCost * (Number(watchQty) || 0)),
+                              })
+                            : t("journal.form.articleHintPurchase", {
+                                cost: formatMoney(item.averageCost),
+                              })
+                          : t("journal.form.articleHintNone")}
                       </p>
                     </FormItem>
                   )}
@@ -186,7 +193,7 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                     name="quantity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quantité</FormLabel>
+                        <FormLabel>{t("journal.form.quantity")}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.001" min="0" {...field} />
                         </FormControl>
@@ -195,14 +202,14 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                     )}
                   />
                   <div className="space-y-2">
-                    <Label>Prix Unitaire HT (DA)</Label>
+                    <Label>{t("journal.form.unitPriceHt")}</Label>
                     <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
                   </div>
                 </div>
 
                 {item && watchType === "SALE" && Number(watchQty) > item.balance && (
                   <p className="text-xs text-destructive">
-                    Stock insuffisant : {item.balance} disponible(s) pour {Number(watchQty)} demandé(s).
+                    {t("journal.form.insufficientStock", { balance: item.balance, requested: Number(watchQty) })}
                   </p>
                 )}
               </div>
@@ -214,7 +221,7 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="amountHt"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>Montant HT (DA)</FormLabel>
+                    <FormLabel>{t("journal.form.amountHt")}</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -227,7 +234,7 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="tvaRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Taux TVA (%)</FormLabel>
+                    <FormLabel>{t("journal.form.tvaRate")}</FormLabel>
                     <FormControl>
                       <Input type="number" step="1" min="0" max="100" {...field} />
                     </FormControl>
@@ -243,17 +250,17 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="paymentMethod"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mode de paiement</FormLabel>
+                    <FormLabel>{t("journal.form.paymentMethod")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner..." />
+                          <SelectValue placeholder={t("company.selectPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="BANK">Banque / Virement</SelectItem>
-                        <SelectItem value="CASH">Espèces</SelectItem>
-                        <SelectItem value="CREDIT">Crédit / À terme</SelectItem>
+                        <SelectItem value="BANK">{t("journal.form.methodBank")}</SelectItem>
+                        <SelectItem value="CASH">{t("journal.form.methodCash")}</SelectItem>
+                        <SelectItem value="CREDIT">{t("journal.form.methodCredit")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -265,17 +272,17 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Statut du paiement</FormLabel>
+                    <FormLabel>{t("journal.form.status")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner..." />
+                          <SelectValue placeholder={t("company.selectPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="PAID">Payé</SelectItem>
-                        <SelectItem value="UNPAID">Impayé</SelectItem>
-                        <SelectItem value="PARTIAL">Partiel</SelectItem>
+                        <SelectItem value="PAID">{t("consts.transaction.status.PAID")}</SelectItem>
+                        <SelectItem value="UNPAID">{t("consts.transaction.status.UNPAID")}</SelectItem>
+                        <SelectItem value="PARTIAL">{t("consts.transaction.status.PARTIAL")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -286,11 +293,11 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
 
             <div className="bg-muted p-4 rounded-md grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Montant TVA</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("journal.form.tvaAmount")}</p>
                 <p className="text-lg font-semibold">{formatMoney(tvaAmount)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-muted-foreground">Montant TTC</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("journal.form.amountTtc")}</p>
                 <p className="text-2xl font-bold text-primary">{formatMoney(amountTtc)}</p>
               </div>
             </div>
@@ -303,10 +310,10 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
               {createTransaction.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enregistrement en cours...
+                  {t("journal.form.submitting")}
                 </>
               ) : (
-                "Enregistrer l'opération"
+                t("journal.form.submit")
               )}
             </Button>
           </form>

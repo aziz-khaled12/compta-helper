@@ -7,7 +7,7 @@ import {
   useListAssets,
   useListPayrolls,
 } from "@workspace/api-client-react";
-import { MONTHS, monthLabel } from "@/lib/months";
+import { getMonths, monthLabel } from "@/lib/months";
 import { rangeStart, rangeEnd } from "@/lib/ledger";
 import { useInsights } from "@/hooks/useInsights";
 
@@ -25,6 +25,7 @@ import { useInsights } from "@/hooks/useInsights";
 export function useAnalyseState() {
   const now = useMemo(() => new Date(), []);
   const year = now.getFullYear();
+  const MONTHS = getMonths();
 
   const [fromYear, setFromYear] = useState(year);
   const [fromMonth, setFromMonth] = useState(1);

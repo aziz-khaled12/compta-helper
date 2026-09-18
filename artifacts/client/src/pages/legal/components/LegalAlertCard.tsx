@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/format";
 import {
   AlertTriangle,
@@ -12,10 +13,10 @@ import {
 } from "lucide-react";
 import type { LegalAlert, LegalAlertRelevance } from "@workspace/api-client-react";
 import {
-  RELEVANCE_LABELS,
   documentHeading,
   explainMatch,
   journalReference,
+  relevanceLabel,
 } from "../lib/reason";
 
 /**
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export function LegalAlertCard({ alert, onAcknowledge, isAcknowledging }: Props) {
+  const { t } = useTranslation();
   const { chip, icon: Icon } = RELEVANCE_STYLES[alert.relevance];
   const explanation = explainMatch(alert.matchedOn);
   const isAcknowledged = Boolean(alert.acknowledgedAt);
@@ -58,7 +60,7 @@ export function LegalAlertCard({ alert, onAcknowledge, isAcknowledging }: Props)
               {/* The full official title, not truncated to a code: this is the
                   line that tells the user what the text actually is. */}
               <h3 className="font-semibold leading-snug">
-                {alert.titleFr || alert.titleAr || "Texte sans intitulé"}
+                {alert.titleFr || alert.titleAr || t("legal.untitled")}
               </h3>
               {alert.titleAr && (
                 <p className="text-sm text-muted-foreground" dir="rtl" lang="ar">
@@ -71,12 +73,12 @@ export function LegalAlertCard({ alert, onAcknowledge, isAcknowledging }: Props)
           <div className="flex flex-col items-end gap-2 shrink-0">
             <Badge variant="outline" className={`gap-1 ${chip}`}>
               <Icon className="h-3 w-3" />
-              {RELEVANCE_LABELS[alert.relevance]}
+              {relevanceLabel(alert.relevance)}
             </Badge>
             {isAcknowledged && (
               <Badge variant="outline" className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200">
                 <CheckCircle2 className="h-3 w-3" />
-                Traité
+                {t("legal.acknowledged")}
               </Badge>
             )}
           </div>
@@ -87,7 +89,7 @@ export function LegalAlertCard({ alert, onAcknowledge, isAcknowledging }: Props)
         {alert.summaryFr && (
           <div className="rounded-lg border bg-background/60 p-3">
             <p className="text-xs font-medium text-muted-foreground mb-1">
-              Ce que ce texte change
+              {t("legal.summaryTitle")}
             </p>
             <p className="text-sm leading-relaxed">{alert.summaryFr}</p>
           </div>
@@ -108,7 +110,7 @@ export function LegalAlertCard({ alert, onAcknowledge, isAcknowledging }: Props)
         <div className="flex items-center justify-between gap-4 pt-1 border-t">
           <p className="text-xs text-muted-foreground">
             {journalReference(alert)}
-            {alert.publishedOn ? ` · publié le ${formatDate(alert.publishedOn)}` : ""}
+            {alert.publishedOn ? t("legal.publishedOn", { date: formatDate(alert.publishedOn) }) : ""}
           </p>
 
           {!isAcknowledged && (
@@ -124,7 +126,7 @@ export function LegalAlertCard({ alert, onAcknowledge, isAcknowledging }: Props)
               ) : (
                 <Check className="h-3.5 w-3.5" />
               )}
-              J'en ai pris connaissance
+              {t("legal.acknowledge")}
             </Button>
           )}
         </div>

@@ -1,10 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 import { useInventoryState } from "./hooks/useInventoryState";
 import { InventoryTable } from "./components/InventoryTable";
 import { MovementHistory } from "./components/MovementHistory";
 
 export default function Inventory() {
+  const { t } = useTranslation();
   const state = useInventoryState();
   const { totalValue } = state;
 
@@ -12,8 +14,8 @@ export default function Inventory() {
     <div className="space-y-8 pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Stocks</h1>
-          <p className="text-muted-foreground mt-1">Valorisation et mouvements (Matières & Produits finis)</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("inventory.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("inventory.subtitle")}</p>
         </div>
       </div>
 
@@ -25,7 +27,7 @@ export default function Inventory() {
         <div className="space-y-6">
           <Card className="bg-primary text-primary-foreground border-none">
             <CardContent className="pt-6">
-              <p className="text-sm font-medium text-primary-foreground/80 mb-2">Valeur Totale du Stock</p>
+              <p className="text-sm font-medium text-primary-foreground/80 mb-2">{t("inventory.totalValue")}</p>
               <h2 className="text-3xl font-bold">{formatMoney(totalValue)}</h2>
             </CardContent>
           </Card>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import i18n from "@/i18n";
 
 /**
  * The legal forms offered by both the company page and the onboarding wizard.
@@ -28,15 +29,27 @@ export const taxRegimeSchema = z.enum(TAX_REGIMES);
 
 export type TaxRegimeValue = z.infer<typeof taxRegimeSchema>;
 
-export const TAX_REGIME_LABELS: Record<TaxRegimeValue, string> = {
-  FORFAITAIRE: "Régime forfaitaire (IFU) — النظام الجزافي",
-  REEL: "Régime réel — النظام الحقيقي",
-};
+/** Display label for a tax regime, in the active language. */
+export function taxRegimeLabel(regime: TaxRegimeValue): string {
+  return i18n.t(`consts.taxRegime.${regime}`);
+}
 
-export const TAX_REGIME_HINTS: Record<TaxRegimeValue, string> = {
-  FORFAITAIRE: "Déclaration prévisionnelle du chiffre d'affaires — G12.",
-  REEL: "Bordereau mensuel avis de versement — G50.",
-};
+/** One-line explanation of what a regime files, in the active language. */
+export function taxRegimeHint(regime: TaxRegimeValue): string {
+  return i18n.t(`consts.taxRegime.${regime}.hint`);
+}
+
+/**
+ * Display label for a stored legal form. Abbreviations (EURL, SARL, SNC, SPA)
+ * are left verbatim in every language; "Personne Physique" — the one form that
+ * is a full phrase — is translated. The stored values stay unchanged: the legal
+ * crawler matches `docs.legal_forms` against the exact string.
+ */
+export function legalFormLabel(form: string | null | undefined): string {
+  if (!form) return "";
+  const constKey = form === "Personne Physique" ? "PERSONNE_PHYSIQUE" : form;
+  return i18n.t(`consts.legalForm.${constKey}`);
+}
 
 export const fundingSchema = z.object({
   source: z.enum(["OWN_FUNDS", "BANK_LOAN"]),
@@ -49,7 +62,9 @@ export const fundingSchema = z.object({
 
 export type FundingValues = z.infer<typeof fundingSchema>;
 
-export const FUNDING_SOURCE_LABELS: Record<FundingValues["source"], string> = {
-  OWN_FUNDS: "Apport / Capital",
-  BANK_LOAN: "Emprunt Bancaire",
-};
+/** Display label for a funding source, in the active language. */
+export function fundingSourceLabel(
+  source: FundingValues["source"],
+): string {
+  return i18n.t(`consts.funding.source.${source}`);
+}

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function LegalAlertsList({ state, hasSector }: Props) {
+  const { t } = useTranslation();
   const { alerts, isLoading, isError, includeAcknowledged } = state;
 
   if (isLoading) {
@@ -37,9 +39,9 @@ export function LegalAlertsList({ state, hasSector }: Props) {
       <Card>
         <CardContent className="p-8 text-center space-y-2">
           <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-          <p className="font-medium">Impossible de charger les textes juridiques</p>
+          <p className="font-medium">{t("legal.list.errorTitle")}</p>
           <p className="text-sm text-muted-foreground">
-            Vérifiez votre connexion, puis réessayez.
+            {t("legal.list.errorDesc")}
           </p>
         </CardContent>
       </Card>
@@ -56,12 +58,11 @@ export function LegalAlertsList({ state, hasSector }: Props) {
           <div className="space-y-1">
             <p className="font-semibold">
               {includeAcknowledged
-                ? "Aucun texte pour le moment"
-                : "Aucun texte à examiner"}
+                ? t("legal.list.emptyNone")
+                : t("dashboard.legal.empty")}
             </p>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Nous surveillons le Journal Officiel algérien et nous vous
-              signalerons ici les textes qui concernent votre entreprise.
+              {t("legal.list.emptyNoneDesc")}
             </p>
           </div>
 
@@ -72,16 +73,14 @@ export function LegalAlertsList({ state, hasSector }: Props) {
             <div className="max-w-md mx-auto rounded-lg border bg-muted/40 p-4 text-left space-y-2">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-medium">Précisez votre secteur d'activité</p>
+                <p className="text-sm font-medium">{t("legal.list.sectorTitle")}</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Sans secteur renseigné, nous ne pouvons pas filtrer les textes
-                qui visent votre métier — vous ne verrez que ceux qui concernent
-                toutes les entreprises.
+                {t("legal.list.sectorDesc")}
               </p>
               <Link href="/company">
                 <Button variant="outline" size="sm" className="mt-1">
-                  Renseigner mon activité
+                  {t("legal.list.sectorCta")}
                 </Button>
               </Link>
             </div>

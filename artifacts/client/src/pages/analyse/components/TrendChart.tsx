@@ -18,6 +18,7 @@ import {
 import { formatMoney } from "@/lib/format";
 import { monthLabel } from "@/lib/months";
 import type { MonthSeries } from "@/lib/analytics/metrics";
+import { useTranslation } from "react-i18next";
 
 /**
  * Whether a period holds anything worth drawing.
@@ -46,9 +47,6 @@ interface TrendPoint {
   marginPct: number | null;
 }
 
-const REVENUE = "Chiffre d'affaires";
-const MARGIN = "Marge brute";
-
 /**
  * Monthly revenue as bars, gross margin as a line on a second axis.
  *
@@ -61,6 +59,9 @@ const MARGIN = "Marge brute";
  * invisible in either series read alone.
  */
 export function TrendChart({ months }: { months: MonthSeries[] }) {
+  const { t } = useTranslation();
+  const REVENUE = t("analyse.trend.revenue");
+  const MARGIN = t("analyse.trend.margin");
   if (!hasTrendData(months)) return null;
 
   const data: TrendPoint[] = months.map((m) => ({
@@ -82,10 +83,8 @@ export function TrendChart({ months }: { months: MonthSeries[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Évolution mensuelle</CardTitle>
-        <CardDescription>
-          Chiffre d'affaires et marge brute, mois par mois
-        </CardDescription>
+        <CardTitle>{t("analyse.trend.title")}</CardTitle>
+        <CardDescription>{t("analyse.trend.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[320px]">

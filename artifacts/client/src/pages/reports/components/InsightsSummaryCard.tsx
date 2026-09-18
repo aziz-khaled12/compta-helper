@@ -1,9 +1,10 @@
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
-import { SEVERITY_LABELS, type Finding, type Severity } from "@/lib/analytics/types";
+import type { Finding, Severity } from "@/lib/analytics/types";
 
 /**
  * The reports page's pointer to the analysis.
@@ -29,6 +30,7 @@ const DOT_STYLES: Record<Severity, string> = {
 };
 
 export function InsightsSummaryCard({ findings }: { findings: Finding[] }) {
+  const { t } = useTranslation();
   const counts = ORDER.map((severity) => ({
     severity,
     count: findings.filter((f) => f.severity === severity).length,
@@ -45,10 +47,10 @@ export function InsightsSummaryCard({ findings }: { findings: Finding[] }) {
             <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
             <div className="min-w-0">
               <p className="font-semibold">
-                Analyse automatique : rien à signaler
+                {t("reports.analysis.allClear")}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Aucune anomalie détectée dans vos écritures sur cette période.
+                {t("reports.analysis.allClearDesc")}
               </p>
             </div>
           </div>
@@ -65,7 +67,7 @@ export function InsightsSummaryCard({ findings }: { findings: Finding[] }) {
             <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <p className="font-semibold">Analyse automatique</p>
+                <p className="font-semibold">{t("reports.analysis.title")}</p>
                 {counts.map(({ severity, count }) => (
                   <span
                     key={severity}
@@ -74,12 +76,12 @@ export function InsightsSummaryCard({ findings }: { findings: Finding[] }) {
                     <span
                       className={`h-2 w-2 rounded-full ${DOT_STYLES[severity]}`}
                     />
-                    {count} {SEVERITY_LABELS[severity].toLowerCase()}
+                    {count} {t(`consts.insight.severity.${severity}`)}
                   </span>
                 ))}
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Le point le plus urgent —{" "}
+                {t("reports.analysis.mostUrgent")}{" "}
                 <Badge variant="secondary" className="align-middle font-normal">
                   {leading.title}
                 </Badge>
@@ -89,7 +91,7 @@ export function InsightsSummaryCard({ findings }: { findings: Finding[] }) {
 
           <Link href="/analyse">
             <Button variant="outline" className="gap-2">
-              Voir l'analyse
+              {t("reports.analysis.view")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

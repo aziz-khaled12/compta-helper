@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Select,
@@ -8,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MONTHS } from "@/lib/months";
+import { getMonths } from "@/lib/months";
 import { useAnalyseState } from "./hooks/useAnalyseState";
 import { AnalysisKpiCards } from "./components/AnalysisKpiCards";
 import { TrendChart, hasTrendData } from "./components/TrendChart";
@@ -28,6 +29,8 @@ import { InsightsPanel } from "./components/InsightsPanel";
  * the ledger.
  */
 export default function Analyse() {
+  const { t } = useTranslation();
+  const MONTHS = getMonths();
   const state = useAnalyseState();
   const { insights, isLoading } = state;
 
@@ -37,20 +40,17 @@ export default function Analyse() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <Sparkles className="h-7 w-7 text-primary" />
-            Analyse
+            {t("analyse.title")}
           </h1>
           <p className="text-muted-foreground mt-1 max-w-2xl">
-            Vos chiffres clés, leur évolution mois par mois, et les points qui
-            méritent votre attention — expliqués en français courant. Tous les
-            montants sont calculés à partir de vos écritures ; seul le
-            commentaire est rédigé automatiquement.
+            {t("analyse.subtitle")}
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-4 items-end">
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 font-medium">De</p>
+          <p className="text-xs text-muted-foreground mb-1.5 font-medium">{t("analyse.from")}</p>
           <div className="flex gap-2">
             <Select
               value={String(state.fromMonth)}
@@ -86,7 +86,7 @@ export default function Analyse() {
         </div>
 
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 font-medium">À</p>
+          <p className="text-xs text-muted-foreground mb-1.5 font-medium">{t("analyse.to")}</p>
           <div className="flex gap-2">
             <Select
               value={String(state.toMonth)}
@@ -122,7 +122,7 @@ export default function Analyse() {
         </div>
 
         <p className="text-sm text-muted-foreground ml-auto">
-          Période analysée :{" "}
+          {t("analyse.period")}:{" "}
           <span className="font-medium text-foreground">{state.period}</span>
         </p>
       </div>
@@ -156,8 +156,7 @@ export default function Analyse() {
           ) : (
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                Pas encore de données sur cette période — élargissez la plage de
-                dates ou enregistrez vos premières opérations.
+                {t("analyse.noData")}
               </CardContent>
             </Card>
           )}

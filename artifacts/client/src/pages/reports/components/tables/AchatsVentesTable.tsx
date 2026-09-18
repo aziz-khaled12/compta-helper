@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { computeAchatsOrVentes } from "../../lib/calculations";
 import { THead, TFoot, MoneyCell, ReportCard, EmptyState } from "./Primitives";
 
@@ -8,15 +9,20 @@ export function AchatsVentesTable({
   data: ReturnType<typeof computeAchatsOrVentes>;
   type: "achats" | "ventes";
 }) {
+  const { t } = useTranslation();
   const isAchats = type === "achats";
-  const title = isAchats ? "Livre des Achats & Fournisseurs" : "Livre des Ventes & Clients";
-  const tvaLabel = isAchats ? "TVA Déductible (19%)" : "TVA Collectée (19%)";
+  const title = isAchats ? t("reports.title.achats") : t("reports.title.ventes");
+  const tvaLabel = isAchats ? t("reports.col.tvaDeductible") : t("reports.col.tvaCollected");
 
   if (data.data.length === 0) return <Card><CardContent className="pt-6"><EmptyState /></CardContent></Card>;
   return (
     <ReportCard title={title}>
       <table className="w-full text-sm">
-        <THead cols={["Date", "Libellé", "Tiers", "Référence", "Montant HT", tvaLabel, "Montant TTC", "Versements", "Reste à Payer"]} />
+        <THead cols={[
+          t("reports.col.date"), t("reports.col.label"), t("reports.col.tiers"),
+          t("reports.col.ref"), t("reports.col.amountHt"), tvaLabel,
+          t("reports.col.amountTtc"), t("reports.col.payments"), t("reports.col.remaining"),
+        ]} />
         <tbody>
           {data.data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">
@@ -34,7 +40,7 @@ export function AchatsVentesTable({
             </tr>
           ))}
         </tbody>
-        <TFoot cols={["", "TOTAUX", "", "", data.totals.ht, data.totals.tva, data.totals.ttc, data.totals.versements, data.totals.reste]} />
+        <TFoot cols={["", t("reports.totals"), "", "", data.totals.ht, data.totals.tva, data.totals.ttc, data.totals.versements, data.totals.reste]} />
       </table>
     </ReportCard>
   );

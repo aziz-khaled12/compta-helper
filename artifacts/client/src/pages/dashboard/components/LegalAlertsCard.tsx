@@ -1,12 +1,13 @@
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Info, Scale, ShieldCheck } from "lucide-react";
 import { useListLegalAlerts } from "@workspace/api-client-react";
 import {
-  RELEVANCE_LABELS,
   documentHeading,
+  relevanceLabel,
 } from "@/pages/legal/lib/reason";
 
 /**
@@ -17,6 +18,7 @@ import {
  * A dashboard that lists everything stops being a dashboard.
  */
 export function LegalAlertsCard() {
+  const { t } = useTranslation();
   const { data, isLoading } = useListLegalAlerts({});
   const alerts = data ?? [];
   const preview = alerts.slice(0, 3);
@@ -27,12 +29,12 @@ export function LegalAlertsCard() {
         <div className="flex items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary" />
-            Veille juridique
+            {t("dashboard.legal.title")}
           </CardTitle>
           {alerts.length > 0 && (
             <Link href="/legal">
               <Button variant="outline" size="sm">
-                Tout voir
+                {t("dashboard.legal.viewAll")}
               </Button>
             </Link>
           )}
@@ -40,14 +42,13 @@ export function LegalAlertsCard() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">Chargement…</p>
+          <p className="text-sm text-muted-foreground py-6 text-center">{t("dashboard.legal.loading")}</p>
         ) : preview.length === 0 ? (
           <div className="py-6 text-center space-y-2">
             <ShieldCheck className="h-8 w-8 text-emerald-500 mx-auto" />
-            <p className="text-sm font-medium">Aucun texte à examiner</p>
+            <p className="text-sm font-medium">{t("dashboard.legal.empty")}</p>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              Nous surveillons le Journal Officiel et vous alerterons dès qu'un
-              texte concernera votre entreprise.
+              {t("dashboard.legal.emptyDesc")}
             </p>
           </div>
         ) : (
@@ -72,7 +73,7 @@ export function LegalAlertsCard() {
                         {documentHeading(alert)}
                       </p>
                       <p className="text-sm font-medium line-clamp-2 leading-snug">
-                        {alert.titleFr || alert.titleAr || "Texte sans intitulé"}
+                        {alert.titleFr || alert.titleAr || t("dashboard.legal.untitled")}
                       </p>
                     </div>
                     <Badge
@@ -83,7 +84,7 @@ export function LegalAlertsCard() {
                           : "bg-amber-100 text-amber-700 border-amber-200"
                       }`}
                     >
-                      {RELEVANCE_LABELS[alert.relevance]}
+                      {relevanceLabel(alert.relevance)}
                     </Badge>
                   </div>
                 </Link>
@@ -92,9 +93,7 @@ export function LegalAlertsCard() {
 
             {alerts.length > preview.length && (
               <p className="text-xs text-muted-foreground text-center pt-1">
-                et {alerts.length - preview.length} autre
-                {alerts.length - preview.length > 1 ? "s" : ""} texte
-                {alerts.length - preview.length > 1 ? "s" : ""}
+                {t("dashboard.legal.more", { count: alerts.length - preview.length })}
               </p>
             )}
           </div>

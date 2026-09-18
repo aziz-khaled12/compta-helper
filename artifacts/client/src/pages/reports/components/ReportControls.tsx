@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 import { REPORT_TYPES, useReportFilters } from "../hooks/useReportFilters";
-import { MONTHS } from "@/lib/months";
+import { getMonths } from "@/lib/months";
 import type { ReportEligibility } from "@/lib/taxRegime";
 import { fmt } from "@/lib/ledger";
 import { FileDown, FileSpreadsheet, Info, AlertTriangle } from "lucide-react";
@@ -19,12 +20,14 @@ export function ReportControls({
     period: string;
     eligibility: ReportEligibility;
 }) {
+  const { t } = useTranslation();
+  const months = getMonths();
   const years = Array.from({ length: 8 }, (_, i) => filters.DEFAULT_YEAR - 3 + i);
 
   return (
     <div className="flex flex-wrap gap-4 items-end">
       <div className="flex-1 min-w-[220px]">
-        <p className="text-xs text-muted-foreground mb-1.5 font-medium">Type de rapport</p>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">{t("reports.typeLabel")}</p>
         <Select value={filters.reportId} onValueChange={(v) => filters.setReportId(v as any)}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -38,7 +41,7 @@ export function ReportControls({
               return (
                 <SelectItem key={r.id} value={r.id} disabled={!!reason}>
                   <span className="flex flex-col gap-0.5 py-0.5">
-                    <span>{r.label}</span>
+                    <span>{t(r.labelKey)}</span>
                     {reason && (
                       <span className="max-w-[380px] text-xs font-normal leading-snug text-muted-foreground">
                         {reason}
@@ -53,14 +56,14 @@ export function ReportControls({
       </div>
 
       <div>
-        <p className="text-xs text-muted-foreground mb-1.5 font-medium">De</p>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">{t("reports.from")}</p>
         <div className="flex gap-2">
           <Select value={String(filters.fromMonth)} onValueChange={(v) => filters.setFromMonth(Number(v))}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {MONTHS.map((m, i) => (
+              {months.map((m, i) => (
                 <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
               ))}
             </SelectContent>
@@ -79,14 +82,14 @@ export function ReportControls({
       </div>
 
       <div>
-        <p className="text-xs text-muted-foreground mb-1.5 font-medium">À</p>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">{t("reports.to")}</p>
         <div className="flex gap-2">
           <Select value={String(filters.toMonth)} onValueChange={(v) => filters.setToMonth(Number(v))}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {MONTHS.map((m, i) => (
+              {months.map((m, i) => (
                 <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
               ))}
             </SelectContent>
@@ -120,14 +123,12 @@ export function ReportControls({
           selected period. */}
       <div className="w-full rounded-lg border bg-muted/30 px-3 py-2 text-xs">
         <p className="font-medium text-foreground">
-          {eligibility.regime === "FORFAITAIRE"
-            ? "Régime forfaitaire (IFU)"
-            : "Régime réel"}{" "}
+          {t(`consts.taxRegime.${eligibility.regime}.short`)}{" "}
           — CA {eligibility.basisLabel} :{" "}
           <span className="tabular-nums">{fmt(eligibility.turnover)}</span>
           {!eligibility.declared && (
             <span className="ml-1 font-normal text-muted-foreground">
-              (système fiscal non déclaré — déduit de la forme juridique)
+              {t("reports.regimeNotDeclared")}
             </span>
           )}
         </p>

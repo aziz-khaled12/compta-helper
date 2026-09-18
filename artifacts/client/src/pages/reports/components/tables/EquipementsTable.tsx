@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { computeEquipements } from "../../lib/calculations";
 import { THead, MoneyCell, ReportCard, EmptyState } from "./Primitives";
 
@@ -7,15 +8,20 @@ export function EquipementsTable({
 }: {
   data: ReturnType<typeof computeEquipements>;
 }) {
+  const { t } = useTranslation();
   if (data.length === 0) return <Card><CardContent className="pt-6"><EmptyState /></CardContent></Card>;
   const totalMontant = data.reduce((s, r) => s + r.montant, 0);
   const totalAmo = data.reduce((s, r) => s + r.amortissement, 0);
   const totalNet = data.reduce((s, r) => s + r.valeurNette, 0);
 
   return (
-    <ReportCard title="Tableau des Equipements & Amortissements">
+    <ReportCard title={t("reports.title.equipements")}>
       <table className="w-full text-sm">
-        <THead cols={["Date Achat", "Libellé", "Référence", "Valeur d'Origine", "Amortissement Cumulé", "Valeur Nette", "Catégorie"]} />
+        <THead cols={[
+          t("reports.col.purchaseDate"), t("reports.col.label"), t("reports.col.ref"),
+          t("reports.col.originalValue"), t("reports.col.cumulatedDep"),
+          t("reports.col.netValue"), t("reports.col.category"),
+        ]} />
         <tbody>
           {data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">
@@ -35,7 +41,7 @@ export function EquipementsTable({
         </tbody>
         <tfoot>
           <tr className="border-t-2 bg-muted/40 font-bold text-xs">
-            <td className="px-3 py-2.5" colSpan={3}>TOTAUX</td>
+            <td className="px-3 py-2.5" colSpan={3}>{t("reports.totals")}</td>
             <td className="px-3 py-2.5 text-right tabular-nums">{totalMontant.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}</td>
             <td className="px-3 py-2.5 text-right tabular-nums">{totalAmo.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}</td>
             <td className="px-3 py-2.5 text-right tabular-nums">{totalNet.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}</td>

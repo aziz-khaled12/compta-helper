@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@/lib/api-error";
+import i18n from "@/i18n";
 import {
   useListTransactions,
   getListTransactionsQueryKey,
@@ -22,10 +23,10 @@ import {
 export const transactionSchema = z.object({
   type: z.enum(["SALE", "PURCHASE", "EXPENSE"]),
   date: z.string(),
-  label: z.string().min(1, "Libellé requis"),
+  label: z.string().min(1, i18n.t("zod.required", { field: i18n.t("journal.form.label") })),
   thirdParty: z.string().optional(),
   category: z.string().optional(),
-  amountHt: z.coerce.number().min(0, "Montant positif"),
+  amountHt: z.coerce.number().min(0, i18n.t("zod.positive")),
   tvaRate: z.coerce.number().min(0).max(100),
   paymentMethod: z.enum(["CASH", "BANK", "CREDIT"]),
   status: z.enum(["PAID", "UNPAID", "PARTIAL"]),
@@ -116,7 +117,7 @@ export function useJournalState() {
       { data: { ...values, itemId, quantity } },
       {
         onSuccess: () => {
-          toast.success("Écriture enregistrée");
+          toast.success(i18n.t("journal.toast.created"));
           setIsOpen(false);
           form.reset({
             type: "EXPENSE",
@@ -138,7 +139,7 @@ export function useJournalState() {
           // the only place that says *why* a sale was refused, so it is shown
           // rather than replaced with a generic failure.
           toast.error(
-            apiErrorMessage(error) ?? "Erreur lors de l'enregistrement",
+            apiErrorMessage(error) ?? i18n.t("journal.toast.saveError"),
           );
         },
       },
@@ -146,12 +147,12 @@ export function useJournalState() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Supprimer cette écriture comptable ?")) {
+    if (confirm(i18n.t("journal.confirmDelete"))) {
       deleteTransaction.mutate(
         { id },
         {
           onSuccess: () => {
-            toast.success("Écriture supprimée");
+            toast.success(i18n.t("journal.toast.deleted"));
             invalidateBooks();
           },
         },

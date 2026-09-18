@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowDownRight, MoveHorizontal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Link } from "wouter";
 import { useListInventoryItems, useListInventoryMovements } from "@workspace/api-client-react";
 
 export function StockPreview() {
+  const { t } = useTranslation();
   const { data: items } = useListInventoryItems();
   const { data: movements } = useListInventoryMovements();
   const nameById = new Map<string, string>((items ?? []).map((i) => [i.id, i.name]));
@@ -15,8 +17,8 @@ export function StockPreview() {
     <Card className="bg-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2"><MoveHorizontal className="h-5 w-5 text-primary" />Mouvements de Stock Récents</CardTitle>
-          <Link href="/inventory"><Button variant="outline" size="sm">Voir les stocks</Button></Link>
+          <CardTitle className="flex items-center gap-2"><MoveHorizontal className="h-5 w-5 text-primary" />{t("dashboard.stock.title")}</CardTitle>
+          <Link href="/inventory"><Button variant="outline" size="sm">{t("dashboard.stock.viewAll")}</Button></Link>
         </div>
       </CardHeader>
       <CardContent>
@@ -30,8 +32,8 @@ export function StockPreview() {
                     {isIn ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{nameById.get(m.itemId) ?? "Article"}</p>
-                    <p className="text-xs text-muted-foreground">{isIn ? "Entrée" : "Sortie"} · {m.quantity} · {String(m.date).slice(0, 10)}</p>
+                    <p className="text-sm font-medium">{nameById.get(m.itemId) ?? t("dashboard.stock.article")}</p>
+                    <p className="text-xs text-muted-foreground">{isIn ? t("dashboard.stock.in") : t("dashboard.stock.out")} · {m.quantity} · {String(m.date).slice(0, 10)}</p>
                   </div>
                 </div>
                 <div className="text-right text-sm font-semibold">{isIn ? "+" : "-"}{formatMoney(m.quantity * m.unitCostHt)}</div>

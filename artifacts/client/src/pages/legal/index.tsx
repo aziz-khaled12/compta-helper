@@ -2,11 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2, RefreshCw, Scale } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useGetCompany } from "@workspace/api-client-react";
 import { useLegalState } from "./hooks/useLegalState";
 import { LegalAlertsList } from "./components/LegalAlertsList";
 
 export default function Legal() {
+  const { t } = useTranslation();
   const state = useLegalState();
   const { data: company } = useGetCompany();
   const { counts } = state;
@@ -17,11 +19,10 @@ export default function Legal() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <Scale className="h-7 w-7 text-primary" />
-            Veille juridique
+            {t("legal.title")}
           </h1>
           <p className="text-muted-foreground mt-1 max-w-2xl">
-            Les textes du Journal Officiel algérien qui concernent votre
-            entreprise, expliqués simplement.
+            {t("legal.subtitle")}
           </p>
         </div>
 
@@ -36,7 +37,7 @@ export default function Legal() {
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
-          Actualiser
+          {t("legal.refresh")}
         </Button>
       </div>
 
@@ -44,14 +45,14 @@ export default function Legal() {
           than an empty list that might be broken. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
         <span>
-          <span className="font-semibold text-foreground">{counts.total}</span> texte
-          {counts.total > 1 ? "s" : ""} à examiner
+          <span className="font-semibold text-foreground">{counts.total}</span>{" "}
+          {t("legal.count", { count: counts.total })}
         </span>
         {counts.high > 0 && (
-          <span className="text-red-600 font-medium">{counts.high} en priorité élevée</span>
+          <span className="text-red-600 font-medium">{t("legal.highCount", { count: counts.high })}</span>
         )}
         {state.refreshedCount !== null && !state.isRefreshing && (
-          <span>Recherche terminée : {state.refreshedCount} texte(s) correspondant(s).</span>
+          <span>{t("legal.refreshed", { count: state.refreshedCount })}</span>
         )}
       </div>
 
@@ -62,7 +63,7 @@ export default function Legal() {
           onCheckedChange={state.setIncludeAcknowledged}
         />
         <Label htmlFor="include-acknowledged" className="text-sm text-muted-foreground cursor-pointer">
-          Afficher aussi les textes déjà traités
+          {t("legal.showAcknowledged")}
         </Label>
       </div>
 

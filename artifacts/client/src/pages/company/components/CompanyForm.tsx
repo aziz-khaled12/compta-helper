@@ -3,12 +3,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SectorCombobox } from "@/components/sector-combobox";
-import { LEGAL_FORMS, TAX_REGIMES, TAX_REGIME_HINTS, TAX_REGIME_LABELS, type TaxRegimeValue } from "@/lib/company";
+import {
+  LEGAL_FORMS,
+  TAX_REGIMES,
+  legalFormLabel,
+  taxRegimeHint,
+  taxRegimeLabel,
+  type TaxRegimeValue,
+} from "@/lib/company";
 import { useCompanyState } from "../hooks/useCompanyState";
 import { useEffect } from "react";
 
 export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyState> }) {
+  const { t } = useTranslation();
   const { companyForm, onSubmitCompany, upsertCompany } = state;
   const watchedValues = companyForm.watch();
 
@@ -23,8 +32,8 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Raison Sociale</FormLabel>
-              <FormControl><Input placeholder="EURL DJERDJERA" {...field} /></FormControl>
+              <FormLabel>{t("company.name")}</FormLabel>
+              <FormControl><Input placeholder={t("company.namePlaceholder")} {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -35,7 +44,7 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
             name="legalForm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Forme Juridique</FormLabel>
+                <FormLabel>{t("company.legalForm")}</FormLabel>
                 {/* Controlled: passing field.value as children to SelectValue ensures
                     Radix displays the loaded selection immediately without needing an open/close cycle. */}
                 <Select
@@ -46,14 +55,14 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner...">
-                        {field.value}
+                      <SelectValue placeholder={t("company.selectPlaceholder")}>
+                        {legalFormLabel(field.value)}
                       </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {LEGAL_FORMS.map((form) => (
-                      <SelectItem key={form} value={form}>{form}</SelectItem>
+                      <SelectItem key={form} value={form}>{legalFormLabel(form)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -66,7 +75,7 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
             name="nif"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>NIF</FormLabel>
+                <FormLabel>{t("company.nif")}</FormLabel>
                 <FormControl><Input placeholder="000..." {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -78,7 +87,7 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
           name="taxRegime"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Système fiscal</FormLabel>
+              <FormLabel>{t("company.taxRegimeSystem")}</FormLabel>
               <Select
                 value={field.value ?? ""}
                 onValueChange={(val) => {
@@ -87,15 +96,15 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner...">
-                      {field.value ? TAX_REGIME_LABELS[field.value as TaxRegimeValue] : undefined}
+                    <SelectValue placeholder={t("company.selectPlaceholder")}>
+                      {field.value ? taxRegimeLabel(field.value as TaxRegimeValue) : undefined}
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {TAX_REGIMES.map((regime) => (
                     <SelectItem key={regime} value={regime}>
-                      {TAX_REGIME_LABELS[regime]}
+                      {taxRegimeLabel(regime)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -105,8 +114,8 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
                   fiscal return the Reports page will offer. */}
               <p className="text-xs text-muted-foreground">
                 {field.value
-                  ? TAX_REGIME_HINTS[field.value as TaxRegimeValue]
-                  : "Détermine la déclaration fiscale proposée dans les rapports."}
+                  ? taxRegimeHint(field.value as TaxRegimeValue)
+                  : t("company.regimeHintDefault")}
               </p>
               <FormMessage />
             </FormItem>
@@ -117,7 +126,7 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
           name="sectorCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Activité principale</FormLabel>
+              <FormLabel>{t("company.sector")}</FormLabel>
               <FormControl>
                 <SectorCombobox
                   value={field.value}
@@ -133,7 +142,7 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
           name="ai"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Article d'Imposition (AI)</FormLabel>
+              <FormLabel>{t("company.ai")}</FormLabel>
               <FormControl><Input placeholder="16..." {...field} /></FormControl>
               <FormMessage />
             </FormItem>
@@ -144,14 +153,14 @@ export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyStat
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Siège Social</FormLabel>
-              <FormControl><Input placeholder="Adresse complète" {...field} /></FormControl>
+              <FormLabel>{t("company.address")}</FormLabel>
+              <FormControl><Input placeholder={t("company.addressPlaceholder")} {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" className="w-full mt-6" disabled={upsertCompany.isPending}>
-          {upsertCompany.isPending ? "Enregistrement..." : <><Save className="h-4 w-4 mr-2" /> Enregistrer</>}
+          {upsertCompany.isPending ? t("company.saving") : <><Save className="h-4 w-4 mr-2" /> {t("common.save")}</>}
         </Button>
       </form>
     </Form>

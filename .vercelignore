@@ -1,17 +1,23 @@
 # ============================================================================
 # Vercel upload exclusions.
 #
-# `.gitignore` is not enough here. `vercel deploy` uploads the working tree,
-# and without this file it sent all nine node_modules trees (44,729 files) and
-# tripped the 15,000-file limit before the build ever started.
+# `vercel deploy` uploads the working tree, and it does not apply .gitignore to
+# that upload set — hence this file.
 #
-# `.env` is the line that matters. It holds DATABASE_URL and GEMINI_API_KEY,
-# and a CLI deploy that uploads it hands production secrets to the build
-# container. Vercel's own env vars are set in the project settings, not here —
-# the client build reads none of them.
+# `.local/` is the reason this file exists. It is Replit's local state
+# directory and holds 35,615 files, which on its own trips Vercel's
+# 15,000-file limit before the build ever starts. node_modules is excluded by
+# Vercel already; .local is not.
+#
+# `.env` is the line that matters for safety. It holds DATABASE_URL and
+# GEMINI_API_KEY, and uploading it would hand production secrets to the build
+# container. The client build reads none of Vercel's env vars, so nothing here
+# is needed to build.
 # ============================================================================
 
-node_modules
+# Replit local state — 35,615 files.
+.local
+
 .env
 .env.*
 

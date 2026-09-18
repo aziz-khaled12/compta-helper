@@ -1,5 +1,10 @@
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { ar, fr } from "date-fns/locale";
+import i18n from "@/i18n";
+
+function dateLocale() {
+  return i18n.resolvedLanguage?.startsWith("ar") ? ar : fr;
+}
 
 export function formatMoney(amount: number | undefined | null): string {
   if (amount == null) return "0,00 DA";
@@ -14,11 +19,11 @@ export function formatMoney(amount: number | undefined | null): string {
 export function formatDate(date: string | Date | undefined | null, dateFormat = "dd MMM yyyy"): string {
   if (!date) return "-";
   const d = typeof date === "string" ? parseISO(date) : date;
-  return format(d, dateFormat, { locale: fr });
+  return format(d, dateFormat, { locale: dateLocale() });
 }
 
 export function formatRelative(date: string | Date | undefined | null): string {
   if (!date) return "-";
   const d = typeof date === "string" ? parseISO(date) : date;
-  return formatDistanceToNow(d, { locale: fr, addSuffix: true });
+  return formatDistanceToNow(d, { locale: dateLocale(), addSuffix: true });
 }

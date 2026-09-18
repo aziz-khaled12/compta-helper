@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import {
@@ -20,35 +22,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Users, Plus, Briefcase, Calendar, Trash2, Heart } from "lucide-react";
 
-const employeeSchema = z.object({
-  fullName: z.string().min(1, "Nom requis"),
-  position: z.string().optional(),
-  familySituation: z.enum([
-    "SINGLE", "MARRIED", "MARRIED_1_CHILD", "MARRIED_2_CHILDREN", "MARRIED_3_CHILDREN", "MARRIED_4_PLUS_CHILDREN"
-  ]),
-  baseSalary: z.coerce.number().min(0, "Salaire positif"),
-  experienceYears: z.coerce.number().min(0).default(0),
-  hireDate: z.string(),
-});
+const FAMILY_SITUATIONS = [
+  "SINGLE",
+  "MARRIED",
+  "MARRIED_1_CHILD",
+  "MARRIED_2_CHILDREN",
+  "MARRIED_3_CHILDREN",
+  "MARRIED_4_PLUS_CHILDREN",
+] as const;
 
-const SITUATION_LABELS: Record<string, string> = {
-  "SINGLE": "Célibataire",
-  "MARRIED": "Marié(e) sans enfant",
-  "MARRIED_1_CHILD": "Marié(e) + 1 enfant",
-  "MARRIED_2_CHILDREN": "Marié(e) + 2 enfants",
-  "MARRIED_3_CHILDREN": "Marié(e) + 3 enfants",
-  "MARRIED_4_PLUS_CHILDREN": "Marié(e) + 4+ enfants",
-};
+const familySituationLabel = (t: TFunction, value: string): string =>
+  t(`consts.employee.familySituation.${value}`);
+
+const employeeSchema = (t: TFunction) =>
+  z.object({
+    fullName: z.string().min(1, t("employees.nameRequired")),
+    position: z.string().optional(),
+    familySituation: z.enum(FAMILY_SITUATIONS),
+    baseSalary: z.coerce.number().min(0, t("employees.salaryPositive")),
+    experienceYears: z.coerce.number().min(0).default(0),
+    hireDate: z.string(),
+  });
+
+type EmployeeFormValues = z.infer<ReturnType<typeof employeeSchema>>;
 
 export default function Employees() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: employees, isLoading } = useListEmployees();
   const createEmployee = useCreateEmployee();
   const deleteEmployee = useDeleteEmployee();
   const [isOpen, setIsOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof employeeSchema>>({
-    resolver: zodResolver(employeeSchema),
+  const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeSchema(t)),
     defaultValues: {
       fullName: "",
       position: "",
@@ -59,31 +66,31 @@ export default function Employees() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof employeeSchema>) => {
+  const onSubmit = (values: EmployeeFormValues) => {
     createEmployee.mutate(
       { data: values },
       {
         onSuccess: () => {
-          toast.success("Employé ajouté");
+          toast.success(t("employees.added"));
           setIsOpen(false);
           form.reset();
           queryClient.invalidateQueries({ queryKey: getListEmployeesQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },
         onError: () => {
-          toast.error("Erreur lors de l'ajout");
+          toast.error(t("employees.addError"));
         }
       }
     );
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Retirer ${name} des effectifs ? (Conserve l'historique de paie)`)) {
+    if (confirm(t("employees.removeConfirm", { name }))) {
       deleteEmployee.mutate(
         { id },
         {
           onSuccess: () => {
-            toast.success("Employé retiré");
+            toast.success(t("employees.removed"));
             queryClient.invalidateQueries({ queryKey: getListEmployeesQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           }
@@ -96,20 +103,20 @@ export default function Employees() {
     <div className="space-y-8 pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Personnel</h1>
-          <p className="text-muted-foreground mt-1">Gestion des employés et situations familiales</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("employees.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("employees.subtitle")}</p>
         </div>
         
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Nouvel employé
+              {t("employees.add")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Fiche Employé</DialogTitle>
+              <DialogTitle>{t("employees.formTitle")}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
@@ -118,9 +125,9 @@ export default function Employees() {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nom Complet</FormLabel>
+                      <FormLabel>{t("employees.fullName")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nom et prénom" {...field} />
+                        <Input placeholder={t("employees.fullNamePlaceholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -133,9 +140,9 @@ export default function Employees() {
                     name="position"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Poste / Fonction</FormLabel>
+                        <FormLabel>{t("employees.position")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Ouvrier qualifié" {...field} />
+                          <Input placeholder={t("employees.positionPlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -146,7 +153,7 @@ export default function Employees() {
                     name="hireDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Date d'embauche</FormLabel>
+                        <FormLabel>{t("employees.hireDate")}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -161,7 +168,7 @@ export default function Employees() {
                   name="familySituation"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Situation Familiale (Impacte l'IRG)</FormLabel>
+                      <FormLabel>{t("employees.familySituation")}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -169,8 +176,8 @@ export default function Employees() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {Object.entries(SITUATION_LABELS).map(([val, label]) => (
-                            <SelectItem key={val} value={val}>{label}</SelectItem>
+                          {FAMILY_SITUATIONS.map((val) => (
+                            <SelectItem key={val} value={val}>{familySituationLabel(t, val)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -185,7 +192,7 @@ export default function Employees() {
                     name="baseSalary"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Salaire de base (DA)</FormLabel>
+                        <FormLabel>{t("employees.baseSalary")}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -198,7 +205,7 @@ export default function Employees() {
                     name="experienceYears"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ancienneté acquise (Années)</FormLabel>
+                        <FormLabel>{t("employees.experienceYears")}</FormLabel>
                         <FormControl>
                           <Input type="number" {...field} />
                         </FormControl>
@@ -209,7 +216,7 @@ export default function Employees() {
                 </div>
 
                 <Button type="submit" className="w-full mt-6" disabled={createEmployee.isPending}>
-                  Enregistrer l'employé
+                  {t("employees.saveEmployee")}
                 </Button>
               </form>
             </Form>
@@ -221,9 +228,9 @@ export default function Employees() {
         <Card className="bg-card border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium">Aucun employé</h3>
+            <h3 className="text-lg font-medium">{t("employees.emptyTitle")}</h3>
             <p className="text-muted-foreground mt-1 max-w-sm">
-              Ajoutez vos collaborateurs pour pouvoir générer leurs bulletins de paie.
+              {t("employees.emptyDesc")}
             </p>
           </CardContent>
         </Card>
@@ -244,26 +251,26 @@ export default function Employees() {
                   {emp.fullName.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
                 </div>
                 <CardTitle>{emp.fullName}</CardTitle>
-                <CardDescription className="text-primary">{emp.position || "Non spécifié"}</CardDescription>
+                <CardDescription className="text-primary">{emp.position || t("common.none")}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Heart className="h-4 w-4" />
-                    <span>{SITUATION_LABELS[emp.familySituation]}</span>
+                    <span>{familySituationLabel(t, emp.familySituation)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Embauché le {formatDate(emp.hireDate)}</span>
+                    <span>{t("employees.hiredOn", { date: formatDate(emp.hireDate) })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Briefcase className="h-4 w-4" />
-                    <span>{emp.experienceYears || 0} ans d'ancienneté reconnue</span>
+                    <span>{t("employees.seniority", { years: emp.experienceYears || 0 })}</span>
                   </div>
                 </div>
               </CardContent>
               <div className="p-4 border-t bg-muted/30 mt-auto flex justify-between items-center rounded-b-lg">
-                <span className="text-xs font-medium text-muted-foreground">Salaire de base</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("employees.baseSalaryLabel")}</span>
                 <span className="font-bold text-foreground">{formatMoney(emp.baseSalary)}</span>
               </div>
             </Card>

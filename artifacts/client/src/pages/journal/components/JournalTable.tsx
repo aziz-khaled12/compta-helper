@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 import { Trash2, FileText, ChevronRight, ChevronDown } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { useJournalState } from "../hooks/useJournalState";
@@ -10,16 +11,17 @@ import { entriesForTransaction } from "../lib/entries";
 import { EntryDetail } from "./EntryDetail";
 
 export function JournalTable({ state }: { state: ReturnType<typeof useJournalState> }) {
+  const { t } = useTranslation();
   const { filter, setFilter, filteredTransactions, handleDelete, itemById, expandedIds, toggleExpanded } = state;
 
   return (
     <Tabs defaultValue={filter} onValueChange={(v) => setFilter(v as any)} className="w-full">
       <div className="px-6 pt-6 pb-2 border-b">
         <TabsList>
-          <TabsTrigger value="ALL">Toutes</TabsTrigger>
-          <TabsTrigger value="SALE">Ventes</TabsTrigger>
-          <TabsTrigger value="PURCHASE">Achats</TabsTrigger>
-          <TabsTrigger value="EXPENSE">Charges</TabsTrigger>
+          <TabsTrigger value="ALL">{t("journal.table.tabAll")}</TabsTrigger>
+          <TabsTrigger value="SALE">{t("journal.table.tabSales")}</TabsTrigger>
+          <TabsTrigger value="PURCHASE">{t("journal.table.tabPurchases")}</TabsTrigger>
+          <TabsTrigger value="EXPENSE">{t("journal.table.tabExpenses")}</TabsTrigger>
         </TabsList>
       </div>
       <div className="p-0">
@@ -28,14 +30,14 @@ export function JournalTable({ state }: { state: ReturnType<typeof useJournalSta
             <TableHeader className="bg-muted/30">
               <TableRow>
                 <TableHead className="w-8"></TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Libellé / Tiers</TableHead>
-                <TableHead className="text-right">HT</TableHead>
-                <TableHead className="text-right">TVA</TableHead>
-                <TableHead className="text-right">TTC</TableHead>
-                <TableHead className="text-right">Coût</TableHead>
-                <TableHead>Paiement</TableHead>
+                <TableHead>{t("journal.table.colDate")}</TableHead>
+                <TableHead>{t("journal.table.colType")}</TableHead>
+                <TableHead>{t("journal.table.colLabel")}</TableHead>
+                <TableHead className="text-right">{t("journal.table.colHt")}</TableHead>
+                <TableHead className="text-right">{t("journal.table.colTva")}</TableHead>
+                <TableHead className="text-right">{t("journal.table.colTtc")}</TableHead>
+                <TableHead className="text-right">{t("journal.table.colCost")}</TableHead>
+                <TableHead>{t("journal.table.colPayment")}</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -44,25 +46,25 @@ export function JournalTable({ state }: { state: ReturnType<typeof useJournalSta
                 <TableRow>
                   <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
                     <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                    Aucune écriture trouvée pour ce filtre.
+                    {t("journal.table.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTransactions.map((t) => {
-                  const item = t.itemId ? itemById.get(t.itemId) : undefined;
-                  const entry = entriesForTransaction(t, item);
-                  const isExpanded = expandedIds.has(t.id);
+                filteredTransactions.map((tx) => {
+                  const item = tx.itemId ? itemById.get(tx.itemId) : undefined;
+                  const entry = entriesForTransaction(tx, item);
+                  const isExpanded = expandedIds.has(tx.id);
 
                   return (
-                    <Fragment key={t.id}>
+                    <Fragment key={tx.id}>
                       <TableRow>
                         <TableCell className="pr-0">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
-                            onClick={() => toggleExpanded(t.id)}
-                            aria-label={isExpanded ? "Masquer l'écriture" : "Afficher l'écriture"}
+                            onClick={() => toggleExpanded(tx.id)}
+                            aria-label={isExpanded ? t("journal.table.hide") : t("journal.table.show")}
                           >
                             {isExpanded ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -71,43 +73,43 @@ export function JournalTable({ state }: { state: ReturnType<typeof useJournalSta
                             )}
                           </Button>
                         </TableCell>
-                        <TableCell className="text-sm">{formatDate(t.date)}</TableCell>
+                        <TableCell className="text-sm">{formatDate(tx.date)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getTypeBadgeClass(t.type)}>
-                            {t.type === "SALE" ? "Vente" : t.type === "PURCHASE" ? "Achat" : "Charge"}
+                          <Badge variant="outline" className={getTypeBadgeClass(tx.type)}>
+                            {t(`consts.transaction.type.${tx.type}`)}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{t.label}</div>
+                          <div className="font-medium">{tx.label}</div>
                           <div className="text-xs text-muted-foreground">
-                            {t.thirdParty}
+                            {tx.thirdParty}
                             {/* Naming the article is what explains the Coût column. */}
                             {item && (
-                              <span className={t.thirdParty ? " · " : ""}>
+                              <span className={tx.thirdParty ? " · " : ""}>
                                 {item.name}
-                                {t.quantity != null && ` × ${t.quantity}`}
+                                {tx.quantity != null && ` × ${tx.quantity}`}
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right text-sm">{formatMoney(t.amountHt)}</TableCell>
+                        <TableCell className="text-right text-sm">{formatMoney(tx.amountHt)}</TableCell>
                         <TableCell className="text-right text-sm text-muted-foreground">
-                          <div>{formatMoney(t.tvaAmount)}</div>
-                          <div className="text-[10px]">{t.tvaRate}%</div>
+                          <div>{formatMoney(tx.tvaAmount)}</div>
+                          <div className="text-[10px]">{tx.tvaRate}%</div>
                         </TableCell>
-                        <TableCell className={`text-right font-semibold ${t.type === "SALE" ? "text-emerald-600" : "text-foreground"}`}>
-                          {t.type === "SALE" ? "+" : "-"}
-                          {formatMoney(t.amountTtc)}
+                        <TableCell className={`text-right font-semibold ${tx.type === "SALE" ? "text-emerald-600" : "text-foreground"}`}>
+                          {tx.type === "SALE" ? "+" : "-"}
+                          {formatMoney(tx.amountTtc)}
                         </TableCell>
                         <TableCell className="text-right text-sm">
-                          {t.costOfGoodsSold != null ? (
+                          {tx.costOfGoodsSold != null ? (
                             <div>
                               <div className="text-muted-foreground">
-                                {formatMoney(t.costOfGoodsSold)}
+                                {formatMoney(tx.costOfGoodsSold)}
                               </div>
-                              {t.unitCostHt != null && (
+                              {tx.unitCostHt != null && (
                                 <div className="text-[10px] text-muted-foreground">
-                                  CUMP {formatMoney(t.unitCostHt)}
+                                  {t("journal.table.colCump")} {formatMoney(tx.unitCostHt)}
                                 </div>
                               )}
                             </div>
@@ -117,14 +119,14 @@ export function JournalTable({ state }: { state: ReturnType<typeof useJournalSta
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs">{t.paymentMethod === "BANK" ? "Banque" : t.paymentMethod === "CASH" ? "Espèces" : "Crédit"}</span>
-                            <Badge variant={t.status === "PAID" ? "default" : t.status === "UNPAID" ? "destructive" : "secondary"} className="w-fit text-[10px] h-4">
-                              {t.status === "PAID" ? "Payé" : t.status === "UNPAID" ? "Impayé" : "Partiel"}
+                            <span className="text-xs">{t(`consts.transaction.paymentMethod.${tx.paymentMethod}`)}</span>
+                            <Badge variant={tx.status === "PAID" ? "default" : tx.status === "UNPAID" ? "destructive" : "secondary"} className="w-fit text-[10px] h-4">
+                              {t(`consts.transaction.status.${tx.status}`)}
                             </Badge>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)}>
                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                           </Button>
                         </TableCell>

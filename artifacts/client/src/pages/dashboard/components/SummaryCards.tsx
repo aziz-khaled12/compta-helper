@@ -1,16 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Users, Receipt, Package } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
 import { Link } from "wouter";
 import { useDashboardState } from "../hooks/useDashboardState";
 
 export function SummaryCards({ state }: { state: ReturnType<typeof useDashboardState> }) {
+  const { t } = useTranslation();
   const { summary } = state;
   const cards = [
-    { title: "Immobilisations Net", icon: Activity, value: formatMoney(summary?.totalAssetsValue), link: "/assets", label: "Gérer le parc" },
-    { title: "Effectif Actif", icon: Users, value: `${summary?.totalEmployees || 0} employés`, link: "/employees", label: "Gérer le personnel" },
-    { title: "Masse Salariale (Mois)", icon: Receipt, value: formatMoney(summary?.totalPayrollMonth), link: "/payroll", label: "Aller à la paie" },
-    { title: "Valeur du Stock", icon: Package, value: formatMoney(summary?.totalStockValue), link: "/inventory", label: "Gérer les stocks" },
+    { title: t("dashboard.summary.assets"), icon: Activity, value: formatMoney(summary?.totalAssetsValue), link: "/resources", label: t("dashboard.summary.assetsCta") },
+    { title: t("dashboard.summary.employees"), icon: Users, value: t("dashboard.summary.employeesCount", { count: summary?.totalEmployees || 0 }), link: "/employees", label: t("dashboard.summary.employeesCta") },
+    { title: t("dashboard.summary.payroll"), icon: Receipt, value: formatMoney(summary?.totalPayrollMonth), link: "/payroll", label: t("dashboard.summary.payrollCta") },
+    { title: t("dashboard.summary.stock"), icon: Package, value: formatMoney(summary?.totalStockValue), link: "/inventory", label: t("dashboard.summary.stockCta") },
   ];
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

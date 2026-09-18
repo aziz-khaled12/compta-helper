@@ -16,19 +16,20 @@ import {
   getGetRecentActivityQueryKey,
 } from "@workspace/api-client-react";
 import { apiErrorMessage } from "@/lib/api-error";
+import i18n from "@/i18n";
 
 export const itemSchema = z.object({
-  name: z.string().min(1, "Nom requis"),
+  name: z.string().min(1, i18n.t("zod.required", { field: i18n.t("inventory.name") })),
   category: z.enum(["RAW_MATERIAL", "FINISHED_GOOD", "SUPPLY"]),
   unit: z.string().optional(),
 });
 
 export const movementSchema = z.object({
-  itemId: z.string().min(1, "Article requis"),
+  itemId: z.string().min(1, i18n.t("zod.required", { field: i18n.t("inventory.movement.article") })),
   date: z.string(),
-  quantity: z.coerce.number().min(0.01, "Quantité positive"),
+  quantity: z.coerce.number().min(0.01, i18n.t("zod.positive")),
   direction: z.enum(["IN", "OUT"]),
-  unitCostHt: z.coerce.number().min(0, "Coût positif"),
+  unitCostHt: z.coerce.number().min(0, i18n.t("zod.positive")),
   note: z.string().optional(),
 });
 
@@ -74,12 +75,12 @@ export function useInventoryState() {
   const onSubmitItem = (values: ItemFormValues) => {
     createItem.mutate({ data: values }, {
       onSuccess: () => {
-        toast.success("Article créé");
+        toast.success(i18n.t("inventory.toast.itemCreated"));
         setIsItemOpen(false);
         itemForm.reset();
         queryClient.invalidateQueries({ queryKey: getListInventoryItemsQueryKey() });
       },
-      onError: () => toast.error("Erreur de création"),
+      onError: () => toast.error(i18n.t("inventory.toast.itemCreateError")),
     });
   };
 
@@ -100,21 +101,21 @@ export function useInventoryState() {
   const onSubmitMovement = (values: MovementFormValues) => {
     createMovement.mutate({ data: values }, {
       onSuccess: () => {
-        toast.success("Mouvement enregistré");
+        toast.success(i18n.t("inventory.toast.movementSaved"));
         setIsMovementOpen(false);
         movementForm.reset();
         invalidateStock();
       },
       onError: (error) =>
-        toast.error(apiErrorMessage(error) ?? "Erreur d'enregistrement"),
+        toast.error(apiErrorMessage(error) ?? i18n.t("inventory.toast.movementError")),
     });
   };
 
   const handleDeleteItem = (id: string) => {
-    if (confirm("Supprimer cet article ? Ses mouvements seront perdus.")) {
+    if (confirm(i18n.t("inventory.confirmDeleteItem"))) {
       deleteItem.mutate({ id }, {
         onSuccess: () => {
-          toast.success("Article supprimé");
+          toast.success(i18n.t("inventory.toast.itemDeleted"));
           invalidateStock();
         }
       });

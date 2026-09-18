@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@workspace/auth-web";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,67 +23,64 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, BarChart2, Users, Package, Loader2 } from "lucide-react";
+import type { TFunction } from "i18next";
 
-const FEATURES = [
-  { icon: BarChart2, label: "Tableau de bord", desc: "KPIs en temps réel" },
-  { icon: BookOpen, label: "Journal", desc: "Ventes & Achats" },
-  { icon: Users, label: "Personnel & Paie", desc: "IRG + CNAS auto" },
-  { icon: Package, label: "Stocks", desc: "Valeur pondérée" },
-];
-
-const loginSchema = z.object({
-  email: z.string().min(1, "Email requis").email("Email invalide"),
-  password: z.string().min(1, "Mot de passe requis"),
-});
-
-const registerSchema = z
-  .object({
-    firstName: z.string().min(1, "Prénom requis"),
-    lastName: z.string().min(1, "Nom requis"),
-    email: z.string().min(1, "Email requis").email("Email invalide"),
-    password: z.string().min(6, "6 caractères minimum"),
-    confirmPassword: z.string().min(1, "Confirmation requise"),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Les mots de passe ne correspondent pas",
+const loginSchema = (t: TFunction) =>
+  z.object({
+    email: z.string().min(1, t("auth.emailRequired")).email(t("auth.emailInvalid")),
+    password: z.string().min(1, t("auth.passwordRequired")),
   });
 
-type LoginValues = z.infer<typeof loginSchema>;
-type RegisterValues = z.infer<typeof registerSchema>;
+const registerSchema = (t: TFunction) =>
+  z
+    .object({
+      firstName: z.string().min(1, t("auth.firstNameRequired")),
+      lastName: z.string().min(1, t("auth.lastNameRequired")),
+      email: z.string().min(1, t("auth.emailRequired")).email(t("auth.emailInvalid")),
+      password: z.string().min(6, t("auth.passwordMin")),
+      confirmPassword: z.string().min(1, t("auth.confirmRequired")),
+    })
+    .refine((values) => values.password === values.confirmPassword, {
+      path: ["confirmPassword"],
+      message: t("auth.passwordMismatch"),
+    });
+
+type LoginValues = z.infer<ReturnType<typeof loginSchema>>;
+type RegisterValues = z.infer<ReturnType<typeof registerSchema>>;
 
 /**
  * The API replies with a machine-readable `{ error }` code rather than a
  * message meant for humans — translate the ones a user can actually act on.
  */
-function toFrenchError(error: unknown): string {
+function toFrenchError(t: TFunction, error: unknown): string {
   const data = (error as { data?: { error?: unknown } } | null)?.data;
   const code = typeof data?.error === "string" ? data.error : "";
 
   switch (code) {
     case "Invalid credentials":
-      return "Email ou mot de passe incorrect.";
+      return t("auth.errInvalidCredentials");
     case "Email already in use":
-      return "Cet email est déjà utilisé.";
+      return t("auth.errEmailInUse");
     case "Invalid login data":
     case "Invalid registration data":
-      return "Veuillez vérifier les informations saisies.";
+      return t("auth.errInvalidData");
     default:
-      return "Une erreur s'est produite. Veuillez réessayer.";
+      return t("auth.errGeneric");
   }
 }
 
 export default function Login() {
+  const { t } = useTranslation();
   const { login, register } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
   const loginForm = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema(t)),
     defaultValues: { email: "", password: "" },
   });
 
   const registerForm = useForm<RegisterValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema(t)),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -97,7 +95,7 @@ export default function Login() {
     try {
       await login(values.email, values.password);
     } catch (error) {
-      setFormError(toFrenchError(error));
+      setFormError(toFrenchError(t, error));
     }
   };
 
@@ -111,9 +109,16 @@ export default function Login() {
         lastName: values.lastName,
       });
     } catch (error) {
-      setFormError(toFrenchError(error));
+      setFormError(toFrenchError(t, error));
     }
   };
+
+  const FEATURES = [
+    { icon: BarChart2, label: t("auth.featureDashboard"), desc: t("auth.featureDashboardDesc") },
+    { icon: BookOpen, label: t("auth.featureJournal"), desc: t("auth.featureJournalDesc") },
+    { icon: Users, label: t("auth.featurePayroll"), desc: t("auth.featurePayrollDesc") },
+    { icon: Package, label: t("auth.featureStocks"), desc: t("auth.featureStocksDesc") },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--sidebar-background))] to-background flex flex-col items-center justify-center p-6">
@@ -123,9 +128,9 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold shadow-lg">
             D
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">DJERDJERA</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("auth.brand")}</h1>
           <p className="text-muted-foreground text-sm">
-            Système de comptabilité — SCF Algérie
+            {t("auth.tagline")}
           </p>
         </div>
 
@@ -142,9 +147,9 @@ export default function Login() {
 
         <Card className="shadow-lg">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Bienvenue</CardTitle>
+            <CardTitle className="text-xl">{t("auth.welcome")}</CardTitle>
             <CardDescription>
-              Connectez-vous ou créez votre espace comptable.
+              {t("auth.welcomeDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -153,8 +158,8 @@ export default function Login() {
               onValueChange={() => setFormError(null)}
             >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Se connecter</TabsTrigger>
-                <TabsTrigger value="register">Créer un compte</TabsTrigger>
+                <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
+                <TabsTrigger value="register">{t("auth.register")}</TabsTrigger>
               </TabsList>
 
               {formError && (
@@ -174,12 +179,12 @@ export default function Login() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("auth.email")}</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
                               autoComplete="email"
-                              placeholder="vous@exemple.dz"
+                              placeholder={t("auth.emailPlaceholder")}
                               {...field}
                             />
                           </FormControl>
@@ -192,7 +197,7 @@ export default function Login() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Mot de passe</FormLabel>
+                          <FormLabel>{t("auth.password")}</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -212,10 +217,10 @@ export default function Login() {
                       {loginForm.formState.isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Connexion…
+                          {t("auth.loggingIn")}
                         </>
                       ) : (
-                        "Se connecter"
+                        t("auth.login")
                       )}
                     </Button>
                   </form>
@@ -234,7 +239,7 @@ export default function Login() {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Prénom</FormLabel>
+                            <FormLabel>{t("auth.firstName")}</FormLabel>
                             <FormControl>
                               <Input autoComplete="given-name" {...field} />
                             </FormControl>
@@ -247,7 +252,7 @@ export default function Login() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nom</FormLabel>
+                            <FormLabel>{t("auth.lastName")}</FormLabel>
                             <FormControl>
                               <Input autoComplete="family-name" {...field} />
                             </FormControl>
@@ -261,12 +266,12 @@ export default function Login() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("auth.email")}</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
                               autoComplete="email"
-                              placeholder="vous@exemple.dz"
+                              placeholder={t("auth.emailPlaceholder")}
                               {...field}
                             />
                           </FormControl>
@@ -279,7 +284,7 @@ export default function Login() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Mot de passe</FormLabel>
+                          <FormLabel>{t("auth.password")}</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -296,7 +301,7 @@ export default function Login() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirmer le mot de passe</FormLabel>
+                          <FormLabel>{t("auth.confirmPassword")}</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -316,14 +321,14 @@ export default function Login() {
                       {registerForm.formState.isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Création…
+                          {t("auth.creating")}
                         </>
                       ) : (
-                        "Créer mon compte"
+                        t("auth.createAccount")
                       )}
                     </Button>
                     <p className="text-center text-xs text-muted-foreground">
-                      Vous configurerez votre entreprise juste après.
+                      {t("auth.afterRegister")}
                     </p>
                   </form>
                 </Form>
@@ -333,7 +338,7 @@ export default function Login() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Connexion sécurisée — vos données restent privées.
+          {t("auth.secureNote")}
         </p>
       </div>
     </div>

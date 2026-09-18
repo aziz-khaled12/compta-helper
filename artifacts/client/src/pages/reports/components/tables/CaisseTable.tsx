@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { computeCaisseOrBanque } from "../../lib/calculations";
 import { THead, TFoot, MoneyCell, ReportCard, EmptyState } from "./Primitives";
 
@@ -8,11 +9,16 @@ export function CaisseTable({
   data: ReturnType<typeof computeCaisseOrBanque>;
   title: string;
 }) {
+  const { t } = useTranslation();
   if (data.data.length === 0) return <Card><CardContent className="pt-6"><EmptyState /></CardContent></Card>;
   return (
     <ReportCard title={title}>
       <table className="w-full text-sm">
-        <THead cols={["Date", "Libellé", "Référence", "Encaissement (+)", "Décaissement (-)", "Solde", "Observation"]} />
+        <THead cols={[
+          t("reports.col.date"), t("reports.col.label"), t("reports.col.ref"),
+          t("reports.col.credits"), t("reports.col.debits"), t("reports.col.balance"),
+          t("reports.col.observation"),
+        ]} />
         <tbody>
           {data.data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">
@@ -28,7 +34,7 @@ export function CaisseTable({
             </tr>
           ))}
         </tbody>
-        <TFoot cols={["", "TOTAUX", "", data.totalEnc, data.totalDec, data.finalSolde, ""]} />
+        <TFoot cols={["", t("reports.totals"), "", data.totalEnc, data.totalDec, data.finalSolde, ""]} />
       </table>
     </ReportCard>
   );

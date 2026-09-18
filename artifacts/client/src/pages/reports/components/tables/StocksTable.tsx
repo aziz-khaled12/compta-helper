@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { computeStocks } from "../../lib/calculations";
 import { THead, TFoot, MoneyCell, ReportCard, EmptyState } from "./Primitives";
 
@@ -7,11 +8,16 @@ export function StocksTable({
 }: {
   data: ReturnType<typeof computeStocks>;
 }) {
+  const { t } = useTranslation();
   if (data.data.length === 0) return <Card><CardContent className="pt-6"><EmptyState /></CardContent></Card>;
   return (
-    <ReportCard title="Livre des Stocks">
+    <ReportCard title={t("reports.title.stocks")}>
       <table className="w-full text-sm">
-        <THead cols={["Date", "Article", "Référence", "Entrée (+)", "Sortie (-)", "Solde Valeur", "Note"]} />
+        <THead cols={[
+          t("reports.col.date"), t("reports.col.article"), t("reports.col.ref"),
+          t("reports.col.entry"), t("reports.col.exit"), t("reports.col.valueBalance"),
+          t("reports.col.note"),
+        ]} />
         <tbody>
           {data.data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">
@@ -27,7 +33,7 @@ export function StocksTable({
             </tr>
           ))}
         </tbody>
-        <TFoot cols={["", "TOTAUX", "", data.totalEntree, data.totalSortie, data.finalSolde, ""]} />
+        <TFoot cols={["", t("reports.totals"), "", data.totalEntree, data.totalSortie, data.finalSolde, ""]} />
       </table>
     </ReportCard>
   );

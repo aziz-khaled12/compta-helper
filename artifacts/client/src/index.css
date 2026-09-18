@@ -127,7 +127,7 @@
   --chart-4: 40 50% 45%;  /* Olive/Gold */
   --chart-5: 220 30% 40%; /* Deep Blue */
 
-  --app-font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --app-font-sans: 'Plus Jakarta Sans', 'Inter', 'Noto Sans Arabic', sans-serif;
   --app-font-serif: 'Playfair Display', serif;
   --app-font-mono: 'Space Mono', monospace;
   

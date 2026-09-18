@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 import {
   useGetCompany,
   getGetCompanyQueryKey,
@@ -86,31 +87,31 @@ export function useCompanyState() {
   const onSubmitCompany = (values: CompanyFormValues) => {
     upsertCompany.mutate({ data: values }, {
       onSuccess: () => {
-        toast.success("Profil entreprise mis à jour");
+        toast.success(i18n.t("companyPage.toast.updated"));
         queryClient.invalidateQueries({ queryKey: getGetCompanyQueryKey() });
       },
-      onError: () => toast.error("Erreur lors de la mise à jour"),
+      onError: () => toast.error(i18n.t("companyPage.toast.updateError")),
     });
   };
 
   const onSubmitFunding = (values: FundingFormValues) => {
     createFunding.mutate({ data: values }, {
       onSuccess: () => {
-        toast.success("Fonds ajoutés avec succès");
+        toast.success(i18n.t("companyPage.toast.fundingAdded"));
         setIsFundingOpen(false);
         fundingForm.reset();
         queryClient.invalidateQueries({ queryKey: getListFundingQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
       },
-      onError: () => toast.error("Erreur lors de l'ajout des fonds"),
+      onError: () => toast.error(i18n.t("companyPage.toast.fundingAddError")),
     });
   };
 
   const handleDeleteFunding = (id: string) => {
-    if (confirm("Supprimer cette entrée de capital ?")) {
+    if (confirm(i18n.t("companyPage.confirmDeleteFunding"))) {
       deleteFunding.mutate({ id }, {
         onSuccess: () => {
-          toast.success("Entrée supprimée");
+          toast.success(i18n.t("companyPage.toast.fundingDeleted"));
           queryClient.invalidateQueries({ queryKey: getListFundingQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         }

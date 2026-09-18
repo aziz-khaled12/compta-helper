@@ -8,8 +8,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, Lightbulb, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { knowledgeFor } from "@/lib/analytics/knowledge-base";
-import { SEVERITY_LABELS, type Finding, type Severity } from "@/lib/analytics/types";
+import type { Finding, Severity } from "@/lib/analytics/types";
 
 /**
  * What the owner reads.
@@ -45,6 +46,7 @@ export function InsightsPanel({
   narrationUnavailable,
   periodRef,
 }: InsightsPanelProps) {
+  const { t } = useTranslation();
   // Grouped by severity so the page can be read top-down and abandoned at any
   // point without missing the urgent part.
   const grouped = useMemo(() => {
@@ -69,12 +71,9 @@ export function InsightsPanel({
           <div className="flex items-start gap-3">
             <Sparkles className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold">Aucune anomalie détectée</p>
+              <p className="font-semibold">{t("analyse.panel.noAnomalies")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                L'analyse automatique de vos écritures sur {periodRef} n'a rien
-                relevé qui mérite votre attention. Cela ne veut pas dire que tout
-                est exact — seulement que rien ne ressemble à une erreur dans ce
-                que vous avez saisi.
+                {t("analyse.panel.noAnomaliesDesc", { period: periodRef })}
               </p>
             </div>
           </div>
@@ -88,7 +87,7 @@ export function InsightsPanel({
       <div className="flex items-center gap-2">
         <Lightbulb className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold tracking-tight">
-          Analyse automatique de vos données
+          {t("analyse.panel.title")}
         </h2>
         <Badge variant="secondary">{findings.length}</Badge>
       </div>
@@ -104,12 +103,11 @@ export function InsightsPanel({
         </div>
       ) : isNarrating ? (
         <p className="text-xs text-muted-foreground">
-          Rédaction du résumé…
+          {t("analyse.panel.writingSummary")}
         </p>
       ) : narrationUnavailable ? (
         <p className="text-xs text-muted-foreground">
-          Le résumé automatique n'est pas disponible pour le moment. Chaque
-          constat ci-dessous reste expliqué en entier.
+          {t("analyse.panel.summaryUnavailable")}
         </p>
       ) : null}
 
@@ -117,10 +115,12 @@ export function InsightsPanel({
         <div key={group.severity} className="space-y-2">
           <div className="flex items-center gap-2 pt-1">
             <Badge className={SEVERITY_STYLES[group.severity]}>
-              {SEVERITY_LABELS[group.severity]}
+              {/** {@code t()} with the enum value as the leaf — never the
+                  stored value itself, which does not change with the locale. */}
+              {t(`consts.insight.severity.${group.severity}`)}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              {group.items.length} constat{group.items.length > 1 ? "s" : ""}
+              {t("analyse.panel.findingsCount", { count: group.items.length })}
             </span>
           </div>
           {group.items.map((f, i) => (
@@ -149,6 +149,7 @@ function FindingCard({
   // A rule with no knowledge-base entry cannot exist — `RuleId` makes it a
   // compile error — but the lookup is still guarded, because a missing
   // explanation is exactly the case where showing nothing is the right answer.
+  const { t } = useTranslation();
   const kb = knowledgeFor(finding.ruleId as Parameters<typeof knowledgeFor>[0]);
 
   return (
@@ -199,7 +200,7 @@ function FindingCard({
 
             <div className="space-y-1.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Que faire
+                {t("analyse.panel.whatToDo")}
               </p>
               <ol className="text-sm space-y-1.5 list-decimal list-inside">
                 {kb.remediation.map((step, i) => (

@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
+import i18n, { LANGUAGES, type AppLanguage } from "@/i18n";
 import { useGetCompany } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/auth-web";
 import {
@@ -16,6 +18,7 @@ import {
   Menu,
   LogOut,
   UserCircle,
+  Languages,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -34,27 +37,28 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { t } = useTranslation();
   const [location] = useLocation();
   const { data: company } = useGetCompany();
   const { user, logout } = useAuth();
 
   const navigation = [
-    { name: "Tableau de bord", href: "/", icon: LayoutDashboard },
-    { name: "Identité & Capital", href: "/company", icon: Building2 },
-    { name: "Immobilisations", href: "/assets", icon: Briefcase },
-    { name: "Journal", href: "/journal", icon: BookOpen },
-    { name: "Stocks", href: "/inventory", icon: PackageSearch },
-    { name: "Personnel", href: "/employees", icon: Users },
-    { name: "Paie", href: "/payroll", icon: Receipt },
-    { name: "Rapports", href: "/reports", icon: FileBarChart2 },
-    { name: "Analyse", href: "/analyse", icon: Sparkles },
-    { name: "Veille juridique", href: "/legal", icon: Scale },
+    { name: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
+    { name: t("nav.company"), href: "/company", icon: Building2 },
+    { name: t("nav.resources"), href: "/resources", icon: Briefcase },
+    { name: t("nav.journal"), href: "/journal", icon: BookOpen },
+    { name: t("nav.inventory"), href: "/inventory", icon: PackageSearch },
+    { name: t("nav.employees"), href: "/employees", icon: Users },
+    { name: t("nav.payroll"), href: "/payroll", icon: Receipt },
+    { name: t("nav.reports"), href: "/reports", icon: FileBarChart2 },
+    { name: t("nav.analyse"), href: "/analyse", icon: Sparkles },
+    { name: t("nav.legal"), href: "/legal", icon: Scale },
   ];
 
   const displayName =
     user
-      ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Utilisateur"
-      : "Utilisateur";
+      ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || t("layout.userDefault")
+      : t("layout.userDefault");
 
   const initials = displayName
     .split(" ")
@@ -114,11 +118,35 @@ export function Layout({ children }: LayoutProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void logout()} className="text-destructive gap-2">
           <LogOut className="h-4 w-4" />
-          Se déconnecter
+          {t("layout.logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
+
+  const LanguageSwitch = () => {
+    const active = i18n.resolvedLanguage ?? i18n.language;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-9 w-9" title={t("layout.language")}>
+            <Languages className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {LANGUAGES.map((l: (typeof LANGUAGES)[number]) => (
+            <DropdownMenuItem
+              key={l.code}
+              onClick={() => void i18n.changeLanguage(l.code as AppLanguage)}
+              className={active.startsWith(l.code) ? "text-primary font-medium" : undefined}
+            >
+              {l.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -130,7 +158,7 @@ export function Layout({ children }: LayoutProps) {
               {company?.name || "DJERDJERA"}
             </span>
             <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-wider mt-1">
-              Comptabilité
+              {t("layout.accounting")}
             </span>
           </div>
         </div>
@@ -158,9 +186,9 @@ export function Layout({ children }: LayoutProps) {
               variant="ghost"
               size="icon"
               className="h-6 w-6 text-sidebar-foreground/60 hover:text-destructive shrink-0"
-              onClick={() => void logout()}
-              title="Se déconnecter"
-            >
+onClick={() => void logout()}
+                  title={t("layout.logout")}
+                >
               <LogOut className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -176,7 +204,7 @@ export function Layout({ children }: LayoutProps) {
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="-ml-2">
                   <Menu className="h-5 w-5" />
-                  <span className="sr-only">Menu</span>
+                  <span className="sr-only">{t("layout.menu")}</span>
                 </Button>
               </SheetTrigger>
               <SheetContent
@@ -201,8 +229,11 @@ export function Layout({ children }: LayoutProps) {
           {/* Desktop: left spacer */}
           <div className="hidden md:block" />
 
-          {/* User menu (both mobile + desktop) */}
-          <UserMenu />
+          {/* Language toggle + user menu (both mobile + desktop) */}
+          <div className="flex items-center gap-1">
+            <LanguageSwitch />
+            <UserMenu />
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">

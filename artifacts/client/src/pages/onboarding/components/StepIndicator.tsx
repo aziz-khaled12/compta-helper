@@ -1,14 +1,16 @@
 import { CheckCircle2, Building2, Briefcase, Package, Users } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 
 const STEPS = [
-  { id: 1, label: "Identité & Capital", icon: Building2 },
-  { id: 2, label: "Immobilisations", icon: Briefcase },
-  { id: 3, label: "Stocks", icon: Package },
-  { id: 4, label: "Personnel", icon: Users },
+  { id: 1, labelKey: "onboarding.stepIdentity", icon: Building2 },
+  { id: 2, labelKey: "onboarding.stepAssets", icon: Briefcase },
+  { id: 3, labelKey: "onboarding.stepInventory", icon: Package },
+  { id: 4, labelKey: "onboarding.stepPersonnel", icon: Users },
 ];
 
 export function StepIndicator({ current }: { current: number }) {
+  const { t } = useTranslation();
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between mb-2">
@@ -31,7 +33,7 @@ export function StepIndicator({ current }: { current: number }) {
                   {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-4 w-4" />}
                 </div>
                 <span className={`text-xs font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
-                  {step.label}
+                  {t(step.labelKey)}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
@@ -43,7 +45,7 @@ export function StepIndicator({ current }: { current: number }) {
       </div>
       <Progress value={(current / STEPS.length) * 100} className="h-1.5" />
       <p className="text-xs text-muted-foreground mt-1 text-right">
-        Étape {current} sur {STEPS.length}
+        {t("onboarding.stepOf", { current, total: STEPS.length })}
       </p>
     </div>
   );

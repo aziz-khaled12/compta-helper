@@ -1,10 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { fmt } from "@/lib/ledger";
+import { useTranslation } from "react-i18next";
 
 export function EmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="text-center py-12 text-muted-foreground text-sm">
-      Aucune donnée pour la période sélectionnée.
+      {t("reports.empty")}
     </div>
   );
 }

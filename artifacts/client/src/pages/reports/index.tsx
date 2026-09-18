@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useGetCompany,
   useListTransactions,
@@ -11,7 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReportFilters, REPORT_TYPES } from "./hooks/useReportFilters";
-import { MONTHS, monthLabel } from "@/lib/months";
+import { getMonths, monthLabel } from "@/lib/months";
 import { rangeStart, rangeEnd } from "@/lib/ledger";
 import {
   computeCaisseOrBanque, computeStocks, computeAchatsOrVentes, computeCharges,
@@ -21,7 +22,6 @@ import {
   getReportEligibility,
   IFU_CEILING,
   IFU_RATES,
-  type TaxRegime,
 } from "@/lib/taxRegime";
 import { exportPDF, exportExcel } from "./lib/export";
 import { ReportControls } from "./components/ReportControls";
@@ -29,12 +29,8 @@ import { ReportView } from "./components/ReportView";
 import { InsightsSummaryCard } from "./components/InsightsSummaryCard";
 import { useAnalysis } from "@/lib/analytics/useAnalysis";
 
-const REGIME_LABELS: Record<TaxRegime, string> = {
-  FORFAITAIRE: "Régime forfaitaire (IFU)",
-  REEL: "Régime réel",
-};
-
 export default function Reports() {
+  const { t } = useTranslation();
   const filters = useReportFilters();
   const { data: company } = useGetCompany();
   const { data: txns = [], isLoading: loadingTxns } = useListTransactions();
@@ -53,7 +49,8 @@ export default function Reports() {
   // were rebuilt on every render, which invalidated all of them on every keystroke.
   const from = useMemo(() => rangeStart(filters.fromYear, filters.fromMonth), [filters.fromYear, filters.fromMonth]);
   const to = useMemo(() => rangeEnd(filters.toYear, filters.toMonth), [filters.toYear, filters.toMonth]);
-  const period = `${MONTHS[filters.fromMonth - 1]} ${filters.fromYear} – ${MONTHS[filters.toMonth - 1]} ${filters.toYear}`;
+  const months = useMemo(() => getMonths(), []);
+  const period = `${months[filters.fromMonth - 1]} ${filters.fromYear} – ${months[filters.toMonth - 1]} ${filters.toYear}`;
   const companyName = company?.name || "DJERDJERA";
 
   // Which fiscal return this company may file — G12 under the forfaitaire
@@ -255,8 +252,8 @@ export default function Reports() {
   return (
     <div className="space-y-6 pb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Rapports Comptables</h1>
-        <p className="text-muted-foreground mt-1">Livres comptables standardisés — Comptabilité Financière Simplifiée (SCF Algérie)</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("reports.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("reports.subtitle")}</p>
       </div>
 
       <Card>
@@ -269,12 +266,12 @@ export default function Reports() {
               eligibility={eligibility}
           />
           <p className="text-xs text-muted-foreground mt-3">
-            Période sélectionnée : <span className="font-semibold text-foreground">{period}</span>
+            {t("reports.selectedPeriod")} : <span className="font-semibold text-foreground">{period}</span>
             {isFiscal && (
               <>
                 {" · "}
-                {REGIME_LABELS[eligibility.regime]} — voir l'éligibilité des déclarations
-                fiscales ci-dessus
+                {t(`consts.taxRegime.${eligibility.regime}`)}{" "}
+                — {t("reports.eligibilityHint")}
               </>
             )}
           </p>

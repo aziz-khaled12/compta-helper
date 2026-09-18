@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 import {
   useUpsertCompany,
   useCreateFunding,
@@ -149,7 +150,7 @@ export function useOnboardingState() {
     const today = new Date().toISOString().slice(0, 10);
     setSubmitting(true);
 
-    let phaseLabel = "votre entreprise";
+    let phaseLabel = i18n.t("onboarding.phase.company");
     try {
       // The company must exist before anything else: every other route resolves
       // its tenant through it, and there is nothing to attach to until it is saved.
@@ -180,7 +181,7 @@ export function useOnboardingState() {
       }
 
       if (!done.has("funding")) {
-        phaseLabel = "votre capital";
+        phaseLabel = i18n.t("onboarding.phase.funding");
         for (const entry of draft.funding) {
           const isLoan = entry.source === "BANK_LOAN";
           await createFunding.mutateAsync({
@@ -200,7 +201,7 @@ export function useOnboardingState() {
       }
 
       if (!done.has("assets")) {
-        phaseLabel = "vos immobilisations";
+        phaseLabel = i18n.t("onboarding.phase.assets");
         for (const asset of draft.assets) {
           await createAsset.mutateAsync({
             data: {
@@ -217,7 +218,7 @@ export function useOnboardingState() {
       }
 
       if (!done.has("inventory")) {
-        phaseLabel = "votre stock";
+        phaseLabel = i18n.t("onboarding.phase.inventory");
         for (const item of draft.inventory) {
           const created = await createItem.mutateAsync({
             data: { name: item.name, category: item.category, unit: item.unit },
@@ -231,7 +232,7 @@ export function useOnboardingState() {
               quantity: item.initialQty,
               direction: "IN",
               unitCostHt: item.unitCostHt,
-              note: "Stock initial — configuration initiale",
+              note: i18n.t("onboarding.stockInitialNote"),
             },
           });
         }
@@ -239,7 +240,7 @@ export function useOnboardingState() {
       }
 
       if (!done.has("employees")) {
-        phaseLabel = "votre personnel";
+        phaseLabel = i18n.t("onboarding.phase.employees");
         for (const employee of employees) {
           await createEmployee.mutateAsync({
             data: {
@@ -270,15 +271,14 @@ export function useOnboardingState() {
       // phase ledger had already saved.
       removeDraft();
 
-      toast.success("Configuration terminée !", {
-        description: "Bienvenue sur DJERDJERA Comptable.",
+      toast.success(i18n.t("onboarding.toast.done"), {
+        description: i18n.t("onboarding.toast.doneDesc"),
       });
     } catch {
       // The draft — and the phase ledger it carries — survives, so retrying
       // resumes instead of duplicating everything that already saved.
-      toast.error(`Erreur lors de l'enregistrement de ${phaseLabel}`, {
-        description:
-          "Vos données sont conservées. Vérifiez puis relancez la configuration.",
+      toast.error(i18n.t("onboarding.toast.error", { phase: phaseLabel }), {
+        description: i18n.t("onboarding.toast.errorDesc"),
       });
     } finally {
       setSubmitting(false);

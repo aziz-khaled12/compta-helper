@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ReportId } from "../hooks/useReportFilters";
 import { CaisseTable } from "./tables/CaisseTable";
 import { StocksTable } from "./tables/StocksTable";
@@ -28,11 +29,12 @@ export function ReportView({
   companyName: string;
   company?: ReportCompany;
 }) {
+  const { t } = useTranslation();
   switch (reportId) {
     case "caisse":
-      return <CaisseTable data={data} title="Livre de Caisse" />;
+      return <CaisseTable data={data} title={t("reports.title.caisse")} />;
     case "banque":
-      return <CaisseTable data={data} title="Livre de Banque" />;
+      return <CaisseTable data={data} title={t("reports.title.banque")} />;
     case "stocks":
       return <StocksTable data={data} />;
     case "achats":

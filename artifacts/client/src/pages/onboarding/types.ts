@@ -60,27 +60,6 @@ export type AssetData = z.infer<typeof assetSchema>;
 export type InventoryData = z.infer<typeof inventorySchema>;
 export type EmployeeData = z.infer<typeof employeeSchema>;
 
-export const FAMILY_SITUATION_LABELS: Record<
-  EmployeeData["familySituation"],
-  string
-> = {
-  SINGLE: "Célibataire",
-  MARRIED: "Marié(e) sans enfant",
-  MARRIED_1_CHILD: "Marié(e) + 1 enfant",
-  MARRIED_2_CHILDREN: "Marié(e) + 2 enfants",
-  MARRIED_3_CHILDREN: "Marié(e) + 3 enfants",
-  MARRIED_4_PLUS_CHILDREN: "Marié(e) + 4 enfants et plus",
-};
-
-export const INVENTORY_CATEGORY_LABELS: Record<
-  InventoryData["category"],
-  string
-> = {
-  RAW_MATERIAL: "Matière première",
-  FINISHED_GOOD: "Produit fini",
-  SUPPLY: "Fourniture",
-};
-
 /**
  * Submission runs in this order and is recorded as it goes, so retrying after a
  * failure resumes rather than re-creating everything that already succeeded.

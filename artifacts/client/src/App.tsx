@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,7 +14,6 @@ import {
 
 import Dashboard from "@/pages/dashboard";
 import Company from "@/pages/company";
-import Assets from "@/pages/assets";
 import Journal from "@/pages/journal";
 import Inventory from "@/pages/inventory";
 import Employees from "@/pages/employees";
@@ -23,6 +23,7 @@ import Analyse from "@/pages/analyse";
 import Legal from "@/pages/legal";
 import Login from "@/pages/login";
 import Onboarding from "@/pages/onboarding";
+import Assets from "./pages/resources";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ const queryClient = new QueryClient({
 });
 
 function AppRouter() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const { data: company, isLoading: companyLoading } = useGetCompany({
     // The generated hook's `query` type requires the key even though it defaults
@@ -44,7 +46,7 @@ function AppRouter() {
   if (isLoading || (isAuthenticated && companyLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground text-sm">Chargement…</div>
+        <div className="animate-pulse text-muted-foreground text-sm">{t("common.loading")}</div>
       </div>
     );
   }
@@ -62,7 +64,7 @@ function AppRouter() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/company" component={Company} />
-        <Route path="/assets" component={Assets} />
+        <Route path="/resources" component={Assets} />
         <Route path="/journal" component={Journal} />
         <Route path="/inventory" component={Inventory} />
         <Route path="/employees" component={Employees} />

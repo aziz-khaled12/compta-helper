@@ -18,15 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronRight, Plus, Trash2, Wallet } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { SectorCombobox } from "@/components/sector-combobox";
 import {
-  FUNDING_SOURCE_LABELS,
   LEGAL_FORMS,
   TAX_REGIMES,
-  TAX_REGIME_HINTS,
-  TAX_REGIME_LABELS,
   fundingSchema,
+  fundingSourceLabel,
+  legalFormLabel,
+  taxRegimeHint,
+  taxRegimeLabel,
   type TaxRegimeValue,
 } from "@/lib/company";
 import type { OnboardingState } from "../hooks/useOnboardingState";
@@ -44,6 +46,7 @@ function formatDa(value: number): string {
 }
 
 export function Company({ state }: { state: OnboardingState }) {
+  const { t } = useTranslation();
   const identityForm = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
     defaultValues: state.company ?? {
@@ -88,9 +91,8 @@ export function Company({ state }: { state: OnboardingState }) {
     const started = pending.amount > 0 || (pending.label ?? "").trim() !== "";
 
     if (started && !parsed.success) {
-      toast.error("Capital incomplet", {
-        description:
-          "Complétez le montant et la date, ou videz les champs pour l'ignorer.",
+      toast.error(t("company.capitalIncomplete"), {
+        description: t("company.capitalIncompleteDesc"),
       });
       return;
     }
@@ -112,7 +114,7 @@ export function Company({ state }: { state: OnboardingState }) {
         onSubmit={identityForm.handleSubmit(submitIdentity)}
         className="space-y-4 border rounded-xl p-4 bg-muted/10"
       >
-        <p className="text-sm font-semibold">Identité de l'entreprise</p>
+        <p className="text-sm font-semibold">{t("company.identitySection")}</p>
         <Form {...identityForm}>
           <div className="grid gap-3 md:grid-cols-2">
             <FormField
@@ -120,9 +122,9 @@ export function Company({ state }: { state: OnboardingState }) {
               name="name"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Raison Sociale *</FormLabel>
+                  <FormLabel>{t("company.name")} *</FormLabel>
                   <FormControl>
-                    <Input placeholder="ex. EURL DJERDJERA" {...field} />
+                    <Input placeholder={t("company.namePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,7 +135,7 @@ export function Company({ state }: { state: OnboardingState }) {
               name="nif"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>NIF (Identification Fiscale) *</FormLabel>
+                  <FormLabel>{t("company.nifFull")}</FormLabel>
                   <FormControl>
                     <Input placeholder="000000000000000" {...field} />
                   </FormControl>
@@ -146,7 +148,7 @@ export function Company({ state }: { state: OnboardingState }) {
               name="ai"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>AI (Article d'Imposition) *</FormLabel>
+                  <FormLabel>{t("company.aiFull")}</FormLabel>
                   <FormControl>
                     <Input placeholder="00000000" {...field} />
                   </FormControl>
@@ -159,7 +161,7 @@ export function Company({ state }: { state: OnboardingState }) {
               name="legalForm"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Forme Juridique</FormLabel>
+                  <FormLabel>{t("company.legalForm")}</FormLabel>
                   {/* Controlled, so the choice survives a step-2 → step-1 round trip. */}
                   <Select
                     value={field.value ?? ""}
@@ -169,15 +171,15 @@ export function Company({ state }: { state: OnboardingState }) {
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Choisir...">
-                          {field.value}
+                        <SelectValue placeholder={t("company.choosePlaceholder")}>
+                          {legalFormLabel(field.value)}
                         </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {LEGAL_FORMS.map((form) => (
                         <SelectItem key={form} value={form}>
-                          {form}
+                          {legalFormLabel(form)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -191,7 +193,7 @@ export function Company({ state }: { state: OnboardingState }) {
               name="taxRegime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Système fiscal</FormLabel>
+                  <FormLabel>{t("company.taxRegimeSystem")}</FormLabel>
                   <Select
                     value={field.value ?? ""}
                     onValueChange={(val) => {
@@ -200,15 +202,15 @@ export function Company({ state }: { state: OnboardingState }) {
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Choisir...">
-                          {field.value ? TAX_REGIME_LABELS[field.value as TaxRegimeValue] : undefined}
+                        <SelectValue placeholder={t("company.choosePlaceholder")}>
+                          {field.value ? taxRegimeLabel(field.value as TaxRegimeValue) : undefined}
                         </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {TAX_REGIMES.map((regime) => (
                         <SelectItem key={regime} value={regime}>
-                          {TAX_REGIME_LABELS[regime]}
+                          {taxRegimeLabel(regime)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -217,8 +219,8 @@ export function Company({ state }: { state: OnboardingState }) {
                       fiscal return the reports page will offer. */}
                   <p className="text-xs text-muted-foreground">
                     {field.value
-                      ? TAX_REGIME_HINTS[field.value]
-                      : "Détermine la déclaration fiscale proposée dans les rapports."}
+                      ? taxRegimeHint(field.value as TaxRegimeValue)
+                      : t("company.regimeHintDefault")}
                   </p>
                   <FormMessage />
                 </FormItem>
@@ -229,7 +231,7 @@ export function Company({ state }: { state: OnboardingState }) {
               name="sectorCode"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Activité principale</FormLabel>
+                  <FormLabel>{t("company.sector")}</FormLabel>
                   <FormControl>
                     <SectorCombobox
                       value={field.value}
@@ -245,9 +247,9 @@ export function Company({ state }: { state: OnboardingState }) {
               name="address"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Adresse</FormLabel>
+                  <FormLabel>{t("company.addressShort")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Wilaya, commune..." {...field} />
+                    <Input placeholder={t("company.addressOnboardingPlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -260,11 +262,10 @@ export function Company({ state }: { state: OnboardingState }) {
       <section className="space-y-4 border rounded-xl p-4 bg-muted/10">
         <div className="flex items-center gap-2">
           <Wallet className="h-4 w-4 text-muted-foreground" />
-          <p className="text-sm font-semibold">Capital & Financement</p>
+          <p className="text-sm font-semibold">{t("company.capitalSection")}</p>
         </div>
         <p className="text-xs text-muted-foreground">
-          Déclarez le capital social et les emprunts obtenus. Vous pourrez en
-          ajouter d'autres plus tard depuis la page Entreprise.
+          {t("company.capitalIntro")}
         </p>
 
         {state.funding.length > 0 && (
@@ -276,13 +277,13 @@ export function Company({ state }: { state: OnboardingState }) {
               >
                 <div>
                   <p className="text-sm font-medium">
-                    {FUNDING_SOURCE_LABELS[entry.source]}
+                    {fundingSourceLabel(entry.source)}
                     {entry.label ? ` — ${entry.label}` : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDa(entry.amount)} — {entry.date}
                     {entry.source === "BANK_LOAN" && entry.interestRate
-                      ? ` — ${entry.interestRate}% / ${entry.durationMonths ?? 0} mois`
+                      ? ` — ${entry.interestRate}% / ${entry.durationMonths ?? 0} ${t("company.monthsSuffix")}`
                       : ""}
                   </p>
                 </div>
@@ -297,11 +298,14 @@ export function Company({ state }: { state: OnboardingState }) {
               </div>
             ))}
             <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-              <span className="text-sm font-medium">Total capital</span>
+              <span className="text-sm font-medium">{t("company.totalCapital")}</span>
               <span className="text-sm font-semibold">{formatDa(ownFunds + loans)}</span>
             </div>
             <p className="text-xs text-muted-foreground px-3">
-              Dont apports : {formatDa(ownFunds)} — emprunts : {formatDa(loans)}
+              {t("company.capitalBreakdown", {
+                own: formatDa(ownFunds),
+                loans: formatDa(loans),
+              })}
             </p>
           </div>
         )}
@@ -314,7 +318,7 @@ export function Company({ state }: { state: OnboardingState }) {
                 name="source"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type de financement</FormLabel>
+                    <FormLabel>{t("company.fundingType")}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
@@ -323,10 +327,10 @@ export function Company({ state }: { state: OnboardingState }) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="OWN_FUNDS">
-                          {FUNDING_SOURCE_LABELS.OWN_FUNDS}
+                          {fundingSourceLabel("OWN_FUNDS")}
                         </SelectItem>
                         <SelectItem value="BANK_LOAN">
-                          {FUNDING_SOURCE_LABELS.BANK_LOAN}
+                          {fundingSourceLabel("BANK_LOAN")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -339,7 +343,7 @@ export function Company({ state }: { state: OnboardingState }) {
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>{t("company.date")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -352,7 +356,7 @@ export function Company({ state }: { state: OnboardingState }) {
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Montant (DA) *</FormLabel>
+                    <FormLabel>{t("company.amountDa")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -371,9 +375,9 @@ export function Company({ state }: { state: OnboardingState }) {
                 name="label"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Libellé (optionnel)</FormLabel>
+                    <FormLabel>{t("company.labelOptional")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="ex. Capital initial" {...field} />
+                      <Input placeholder={t("company.labelPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -387,7 +391,7 @@ export function Company({ state }: { state: OnboardingState }) {
                     name="interestRate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Taux d'intérêt (%)</FormLabel>
+                        <FormLabel>{t("company.interestRate")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -405,7 +409,7 @@ export function Company({ state }: { state: OnboardingState }) {
                     name="durationMonths"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Durée (mois)</FormLabel>
+                        <FormLabel>{t("company.durationMonths")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -428,14 +432,14 @@ export function Company({ state }: { state: OnboardingState }) {
             className="gap-2"
             onClick={fundingForm.handleSubmit(addFunding)}
           >
-            <Plus className="h-4 w-4" /> Ajouter au capital
+            <Plus className="h-4 w-4" /> {t("company.addToCapital")}
           </Button>
         </div>
       </section>
 
       <div className="flex justify-end pt-2">
         <Button type="submit" form={IDENTITY_FORM_ID} className="gap-2">
-          Suivant <ChevronRight className="h-4 w-4" />
+          {t("company.next")} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

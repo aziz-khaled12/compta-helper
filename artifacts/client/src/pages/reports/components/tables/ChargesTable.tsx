@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { computeCharges } from "../../lib/calculations";
 import { THead, TFoot, MoneyCell, ReportCard, EmptyState } from "./Primitives";
 
@@ -7,11 +8,16 @@ export function ChargesTable({
 }: {
   data: ReturnType<typeof computeCharges>;
 }) {
+  const { t } = useTranslation();
   if (data.data.length === 0) return <Card><CardContent className="pt-6"><EmptyState /></CardContent></Card>;
   return (
-    <ReportCard title="Livre des Charges d'Exploitation">
+    <ReportCard title={t("reports.title.charges")}>
       <table className="w-full text-sm">
-        <THead cols={["Date", "Libellé", "Référence", "Montant", "Payé", "Reste à Payer", "Observation"]} />
+        <THead cols={[
+          t("reports.col.date"), t("reports.col.label"), t("reports.col.ref"),
+          t("reports.col.amount"), t("reports.col.paid"), t("reports.col.remaining"),
+          t("reports.col.observation"),
+        ]} />
         <tbody>
           {data.data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">
@@ -27,7 +33,7 @@ export function ChargesTable({
             </tr>
           ))}
         </tbody>
-        <TFoot cols={["", "TOTAUX", "", data.totals.montant, data.totals.paye, data.totals.reste, ""]} />
+        <TFoot cols={["", t("reports.totals"), "", data.totals.montant, data.totals.paye, data.totals.reste, ""]} />
       </table>
     </ReportCard>
   );

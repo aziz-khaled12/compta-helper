@@ -29,6 +29,8 @@
  * records as a cash event and which is written to 53/512 (see `cashAccount`).
  */
 
+import i18n from "@/i18n";
+
 /** One débit or crédit line. Exactly one of `debit`/`credit` is non-zero. */
 export interface EntryLine {
   account: string;
@@ -59,23 +61,23 @@ export interface JournalEntry {
 
 /**
  * SCF account numbers. Fixed by the plan comptable, so they are constants rather
- * than configuration.
+ * than configuration. Labels come from i18n so the écrierei follows the language.
  */
 export const ACCOUNTS = {
-  clients: { account: "411", label: "Clients" },
-  fournisseurs: { account: "401", label: "Fournisseurs" },
-  tvaCollectee: { account: "4457", label: "TVA collectée" },
-  tvaDeductible: { account: "4451", label: "TVA déductible" },
-  ventes: { account: "700", label: "Ventes de marchandises" },
-  caisse: { account: "53", label: "Caisse" },
-  banque: { account: "512", label: "Banque" },
+  clients: { account: "411", labelKey: "journal.account.411" },
+  fournisseurs: { account: "401", labelKey: "journal.account.401" },
+  tvaCollectee: { account: "4457", labelKey: "journal.account.4457" },
+  tvaDeductible: { account: "4451", labelKey: "journal.account.4451" },
+  ventes: { account: "700", labelKey: "journal.account.700" },
+  caisse: { account: "53", labelKey: "journal.account.53" },
+  banque: { account: "512", labelKey: "journal.account.512" },
 } as const;
 
 export interface StockAccounts {
   /** Class 3 account the stock sits in. */
-  stock: { account: string; label: string };
+  stock: { account: string; labelKey: string };
   /** Class 6 account the cost is relieved to. */
-  cost: { account: string; label: string };
+  cost: { account: string; labelKey: string };
 }
 
 /**
@@ -90,29 +92,23 @@ export interface StockAccounts {
  */
 const STOCK_ACCOUNTS: Record<string, StockAccounts> = {
   FINISHED_GOOD: {
-    stock: { account: "35", label: "Stocks de produits finis" },
-    cost: {
-      account: "600",
-      label: "Achats consommés de matières et fournitures",
-    },
+    stock: { account: "35", labelKey: "journal.account.35" },
+    cost: { account: "600", labelKey: "journal.account.600" },
   },
   RAW_MATERIAL: {
-    stock: { account: "31", label: "Matières premières et fournitures" },
-    cost: {
-      account: "602",
-      label: "Achats de matières premières et fournitures liées",
-    },
+    stock: { account: "31", labelKey: "journal.account.31" },
+    cost: { account: "602", labelKey: "journal.account.602" },
   },
   SUPPLY: {
-    stock: { account: "32", label: "Autres approvisionnements" },
-    cost: { account: "603", label: "Achats d'autres approvisionnements" },
+    stock: { account: "32", labelKey: "journal.account.32" },
+    cost: { account: "603", labelKey: "journal.account.603" },
   },
 };
 
 /** An article the user has not categorised, or one from an older row. */
 const DEFAULT_STOCK_ACCOUNTS: StockAccounts = {
-  stock: { account: "30", label: "Stocks de marchandises" },
-  cost: { account: "601", label: "Achats de marchandises" },
+  stock: { account: "30", labelKey: "journal.account.30" },
+  cost: { account: "601", labelKey: "journal.account.601" },
 };
 
 export function stockAccountsFor(
@@ -131,7 +127,7 @@ export function stockAccountsFor(
  */
 function cashAccount(paymentMethod: string): {
   account: string;
-  label: string;
+  labelKey: string;
 } {
   if (paymentMethod === "CASH") return ACCOUNTS.caisse;
   if (paymentMethod === "CREDIT") return ACCOUNTS.fournisseurs;
@@ -156,7 +152,7 @@ function round2(n: number): number {
 }
 
 function line(
-  spec: { account: string; label: string },
+  spec: { account: string; labelKey: string },
   side: "debit" | "credit",
   amount: number,
   source: EntryLine["source"],
@@ -164,7 +160,7 @@ function line(
 ): EntryLine {
   return {
     account: spec.account,
-    accountLabel: spec.label,
+    accountLabel: i18n.t(spec.labelKey),
     debit: side === "debit" ? round2(amount) : 0,
     credit: side === "credit" ? round2(amount) : 0,
     source,
@@ -239,7 +235,7 @@ export function entriesForTransaction(
   // category the user typed.
   return assemble([
     line(
-      { account: "6", label: "Charges — compte à ventiler" },
+      { account: "6", labelKey: "journal.account.6" },
       "debit",
       tx.amountHt,
       "JOURNAL",

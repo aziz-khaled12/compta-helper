@@ -35,12 +35,6 @@ export const SEVERITY_ORDER: Record<Severity, number> = {
   INFO: 2,
 };
 
-export const SEVERITY_LABELS: Record<Severity, string> = {
-  CRITICAL: "À corriger",
-  WARNING: "À surveiller",
-  INFO: "Bon à savoir",
-};
-
 /**
  * One observation about the books.
  *

@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { formatMoney } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 import type { JournalEntry } from "../lib/entries";
 
 /**
@@ -11,23 +12,26 @@ import type { JournalEntry } from "../lib/entries";
  * bon de sortie — even though one action produced both.
  */
 export function EntryDetail({ entry }: { entry: JournalEntry }) {
+  const { t } = useTranslation();
   const facture = entry.lines.filter((l) => l.source === "JOURNAL");
   const stock = entry.lines.filter((l) => l.source === "STOCK");
 
   return (
     <div className="py-2 space-y-3">
-      <EntryBlock title="Écriture" lines={facture} />
+      <EntryBlock title={t("journal.entry.title")} lines={facture} />
       {stock.length > 0 && (
-        <EntryBlock title="Bon de sortie — sortie de stock" lines={stock} />
+        <EntryBlock title={t("journal.entry.stockTitle")} lines={stock} />
       )}
       <div className="flex items-center gap-2 text-xs">
         <span className="text-muted-foreground">
-          Total débit {formatMoney(entry.totalDebit)} · crédit{" "}
-          {formatMoney(entry.totalCredit)}
+          {t("journal.entry.total", {
+            debit: formatMoney(entry.totalDebit),
+            credit: formatMoney(entry.totalCredit),
+          })}
         </span>
         {!entry.balanced && (
           <span className="text-destructive font-medium">
-            Écriture déséquilibrée
+            {t("journal.entry.unbalanced")}
           </span>
         )}
       </div>
