@@ -594,17 +594,6 @@ export function findSector(code: string | null | undefined): Sector | undefined 
   return code ? BY_CODE.get(code) : undefined;
 }
 
-/**
- * Display label for a stored code, falling back to the code itself.
- *
- * The fallback matters: a company may carry a sector code that a later version
- * of this catalogue renamed or removed. Showing the raw code is ugly, but it is
- * far better than rendering an empty field and implying no sector is set.
- */
-export function sectorLabelFor(code: string | null | undefined): string {
-  return findSector(code)?.label ?? (code || "");
-}
-
 /** The codes, for constraining the extraction model's output vocabulary. */
 export function sectorCodes(): string[] {
   return SECTORS.map((s) => s.code);

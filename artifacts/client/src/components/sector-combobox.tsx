@@ -1,7 +1,17 @@
 import { useMemo, useState, type ComponentPropsWithRef } from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SECTORS, SECTOR_GROUPS, findSector, normalizeText } from "@workspace/sectors";
+import {
+  SECTORS,
+  SECTOR_GROUPS,
+  findSector,
+  sectorLabel,
+  sectorDescription,
+  sectorGroupLabel,
+  SECTOR_LABEL_AR,
+  SECTOR_DESCRIPTION_AR,
+  normalizeText,
+} from "@workspace/sectors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +62,14 @@ function searchValueFor(code: string): string {
   const sector = findSector(code);
   if (!sector) return normalizeText(code);
   return normalizeText(
-    [sector.label, sector.code, sector.description, ...sector.keywords].join(" "),
+    [
+      sector.label,
+      sector.description,
+      SECTOR_LABEL_AR[code],
+      SECTOR_DESCRIPTION_AR[code],
+      sector.code,
+      ...sector.keywords,
+    ].join(" "),
   );
 }
 
@@ -67,14 +84,16 @@ export function SectorCombobox({
   className,
   ...triggerProps
 }: SectorComboboxProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const selected = findSector(value);
 
   // A code that is no longer in the catalogue is shown as-is rather than as an
   // empty field — the company has *something* recorded, and silently blanking it
   // would imply no sector is set and invite a careless overwrite.
-  const triggerLabel = selected?.label ?? value ?? "";
+  const triggerLabel = selected
+    ? sectorLabel(selected, i18n.language)
+    : value ?? "";
 
   const byGroup = useMemo(
     () =>
@@ -138,7 +157,7 @@ export function SectorCombobox({
             <CommandList className="max-h-72">
               <CommandEmpty>{t("sector.empty")}</CommandEmpty>
               {byGroup.map(({ group, sectors }) => (
-                <CommandGroup key={group} heading={group}>
+                <CommandGroup key={group} heading={sectorGroupLabel(group, i18n.language)}>
                   {sectors.map((sector) => (
                     <CommandItem
                       key={sector.code}
@@ -160,13 +179,13 @@ export function SectorCombobox({
                       />
                       <span className="flex flex-col gap-0.5 min-w-0">
                         <span className="flex items-baseline gap-2">
-                          <span className="font-medium">{sector.label}</span>
+                          <span className="font-medium">{sectorLabel(sector, i18n.language)}</span>
                           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                             {sector.code}
                           </span>
                         </span>
                         <span className="text-xs text-muted-foreground leading-snug">
-                          {sector.description}
+                          {sectorDescription(sector, i18n.language)}
                         </span>
                       </span>
                     </CommandItem>
@@ -179,7 +198,7 @@ export function SectorCombobox({
       </Popover>
       <p className="text-xs text-muted-foreground">
         {selected
-          ? selected.description
+          ? sectorDescription(selected, i18n.language)
           : t("sector.hint")}
       </p>
     </div>

@@ -71,7 +71,7 @@ export function explainMatch(match: LegalAlertMatch): AlertExplanation {
   if (namedSectors.length > 0) {
     details.push(
       i18n.t("legal.match.sectors", {
-        list: list(namedSectors.map(sectorLabelFor)),
+        list: list(namedSectors.map((code) => sectorLabelFor(code, i18n.language))),
       }),
     );
   }
