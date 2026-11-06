@@ -10,6 +10,7 @@ import {
   useListTransactions,
   getListTransactionsQueryKey,
   useCreateTransaction,
+  useCreateTransactionPayment,
   useDeleteTransaction,
   useListInventoryItems,
   getListInventoryItemsQueryKey,
@@ -18,7 +19,9 @@ import {
   getGetMonthlyPnlQueryKey,
   getGetRecentActivityQueryKey,
   getGetTvaSummaryQueryKey,
+  getListTransactionPaymentsQueryKey,
 } from "@workspace/api-client-react";
+import type { Transaction } from "@workspace/api-client-react";
 
 export const transactionSchema = z.object({
   type: z.enum(["SALE", "PURCHASE", "EXPENSE"]),
@@ -48,13 +51,16 @@ export function useJournalState() {
   const [isOpen, setIsOpen] = useState(false);
   // Which rows have their écriture showing. A set rather than a single id so two
   // entries can be compared side by side.
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [paymentMode, setPaymentMode] = useState<"FULL" | "PARTIAL" | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
 
   const { data: transactions = [], isLoading } = useListTransactions();
   // The article list backs the form's article picker and the CUMP/balance hints,
   // and lets the table name the article an entry moved.
   const { data: items = [] } = useListInventoryItems();
   const createTransaction = useCreateTransaction();
+  const createPayment = useCreateTransactionPayment();
   const deleteTransaction = useDeleteTransaction();
 
   const form = useForm<TransactionFormValues>({
@@ -160,37 +166,50 @@ export function useJournalState() {
     }
   };
 
+  const openPayment = (transaction: Transaction, mode: "FULL" | "PARTIAL") => {
+    setSelectedTransaction(transaction);
+    setPaymentMode(mode);
+  };
+
+  const closePayment = () => {
+    setSelectedTransaction(null);
+    setPaymentMode(null);
+  };
+
+  const invalidatePayment = (id: string) => {
+    invalidateBooks();
+    queryClient.invalidateQueries({ queryKey: getListTransactionPaymentsQueryKey(id) });
+  };
+
   const filteredTransactions = transactions.filter((t) => filter === "ALL" || t.type === filter);
 
   // The table names articles and derives their stock side, so it needs the
   // catalogue by id rather than as a list.
   const itemById = new Map(items.map((i) => [i.id, i]));
 
-  const toggleExpanded = (id: string) =>
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
   return {
     filter,
     setFilter,
     isOpen,
     setIsOpen,
-    expandedIds,
-    toggleExpanded,
+    paymentMode,
+    selectedTransaction,
+    detailsTransaction,
+    setDetailsTransaction,
     transactions,
     isLoading,
     items,
     itemById,
     createTransaction,
+    createPayment,
     form,
     tvaAmount,
     amountTtc,
     onSubmit,
     handleDelete,
+    openPayment,
+    closePayment,
+    invalidatePayment,
     filteredTransactions,
   };
 }

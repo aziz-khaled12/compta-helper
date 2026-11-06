@@ -1,6 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatMoney, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 import { usePayrollState } from "../hooks/usePayrollState";
 
@@ -42,18 +43,18 @@ export function PayslipDialog({ state }: { state: ReturnType<typeof usePayrollSt
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.baseSalary")}</TableCell><TableCell className="text-right">{formatMoney(selectedPayslip.baseSalary)}</TableCell><TableCell /></TableRow>
-                  {selectedPayslip.experienceBonus > 0 && <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.experienceBonus")}</TableCell><TableCell className="text-right">{formatMoney(selectedPayslip.experienceBonus)}</TableCell><TableCell /></TableRow>}
-                  <TableRow className="bg-muted/30 font-semibold hover:bg-muted/30"><TableCell>{t("payroll.payslip.gross")}</TableCell><TableCell className="text-right">{formatMoney(selectedPayslip.grossSalary)}</TableCell><TableCell /></TableRow>
-                  <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.cnas")}</TableCell><TableCell /><TableCell className="text-right text-destructive">{formatMoney(selectedPayslip.cnasDeduction)}</TableCell></TableRow>
-                  <TableRow className="bg-muted/30 font-semibold hover:bg-muted/30"><TableCell>{t("payroll.payslip.taxableBase")}</TableCell><TableCell className="text-right">{formatMoney(selectedPayslip.taxableBase)}</TableCell><TableCell /></TableRow>
-                  <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.irg")}</TableCell><TableCell /><TableCell className="text-right text-destructive">{formatMoney(selectedPayslip.irgDeduction)}</TableCell></TableRow>
+                  <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.baseSalary")}</TableCell><TableCell className="text-right"><Money value={selectedPayslip.baseSalary} /></TableCell><TableCell /></TableRow>
+                  {selectedPayslip.experienceBonus > 0 && <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.experienceBonus")}</TableCell><TableCell className="text-right"><Money value={selectedPayslip.experienceBonus} /></TableCell><TableCell /></TableRow>}
+                  <TableRow className="bg-muted/30 font-semibold hover:bg-muted/30"><TableCell>{t("payroll.payslip.gross")}</TableCell><TableCell className="text-right"><Money value={selectedPayslip.grossSalary} /></TableCell><TableCell /></TableRow>
+                  <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.cnas")}</TableCell><TableCell /><TableCell className="text-right text-destructive"><Money value={selectedPayslip.cnasDeduction} /></TableCell></TableRow>
+                  <TableRow className="bg-muted/30 font-semibold hover:bg-muted/30"><TableCell>{t("payroll.payslip.taxableBase")}</TableCell><TableCell className="text-right"><Money value={selectedPayslip.taxableBase} /></TableCell><TableCell /></TableRow>
+                  <TableRow className="border-none hover:bg-transparent"><TableCell>{t("payroll.payslip.irg")}</TableCell><TableCell /><TableCell className="text-right text-destructive"><Money value={selectedPayslip.irgDeduction} /></TableCell></TableRow>
                 </TableBody>
               </Table>
               <div className="mt-8 flex justify-end">
                 <div className="w-72 bg-primary/5 border border-primary/20 rounded-lg p-4">
                   <p className="text-primary font-bold text-sm uppercase tracking-wider mb-2">{t("payroll.payslip.net")}</p>
-                  <p className="text-3xl font-bold text-primary">{formatMoney(selectedPayslip.netToPay)}</p>
+                  <p className="text-3xl font-bold text-primary"><Money value={selectedPayslip.netToPay} /></p>
                 </div>
               </div>
             </div>

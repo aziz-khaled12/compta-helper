@@ -17,9 +17,15 @@ const Progress = React.forwardRef<
     )}
     {...props}
   >
+    {/*
+     * Width instead of a translateX offset on purpose: a block-level child with
+     * a specified width is laid out from the *inline start* edge, so the fill
+     * grows left-to-right in LTR and right-to-left in RTL with no direction
+     * check in JS.
+     */}
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-all"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      className="h-full bg-primary transition-all"
+      style={{ width: `${value || 0}%` }}
     />
   </ProgressPrimitive.Root>
 ))

@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 import { computeCharges } from "../../lib/calculations";
 import { THead, TFoot, MoneyCell, ReportCard, EmptyState } from "./Primitives";
@@ -27,7 +28,7 @@ export function ChargesTable({
               <MoneyCell v={r.montant} />
               <MoneyCell v={r.paye} />
               <td className={`px-3 py-2 text-xs text-right tabular-nums ${r.reste > 0 ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                {r.reste > 0 ? r.reste.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA" : "–"}
+                {r.reste > 0 ? <Money value={r.reste} /> : "–"}
               </td>
               <td className="px-3 py-2 text-xs text-muted-foreground max-w-xs truncate">{r.obs}</td>
             </tr>

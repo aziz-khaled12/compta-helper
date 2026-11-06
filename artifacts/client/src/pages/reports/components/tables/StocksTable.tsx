@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 import { computeStocks } from "../../lib/calculations";
 import { THead, TFoot, MoneyCell, ReportCard, EmptyState } from "./Primitives";
@@ -27,7 +28,7 @@ export function StocksTable({
               <MoneyCell v={r.entree} />
               <MoneyCell v={r.sortie} />
               <td className="px-3 py-2 text-xs text-right tabular-nums font-medium text-primary">
-                {r.solde.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}
+                <Money value={r.solde} />
               </td>
               <td className="px-3 py-2 text-xs text-muted-foreground">{r.obs}</td>
             </tr>

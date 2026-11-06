@@ -32,4 +32,8 @@ export interface Transaction {
   unitCostHt?: number | null;
   /** quantity x unitCostHt. Relieved on a sale (class 6); null otherwise. */
   costOfGoodsSold?: number | null;
+  /** Total amount paid against the facture */
+  paid: number;
+  /** Remaining amount due */
+  rest: number;
 }

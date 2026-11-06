@@ -14,16 +14,11 @@ import {
   type TaxRegimeValue,
 } from "@/lib/company";
 import { useCompanyState } from "../hooks/useCompanyState";
-import { useEffect } from "react";
 
 export function CompanyForm({ state }: { state: ReturnType<typeof useCompanyState> }) {
   const { t } = useTranslation();
   const { companyForm, onSubmitCompany, upsertCompany } = state;
-  const watchedValues = companyForm.watch();
 
-  useEffect(() => {
-    console.log("form values", watchedValues);
-  }, [watchedValues]);
   return (
     <Form {...companyForm}>
       <form onSubmit={companyForm.handleSubmit(onSubmitCompany)} className="space-y-4">

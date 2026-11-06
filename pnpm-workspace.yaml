@@ -13,11 +13,11 @@
 # chain attacks, which have been the #1 vector for npm ecosystem compromises.
 #
 # If you absolutely need to install a package before the 1-day window has
-# passed (e.g. an urgent security bugfix), you can add it to the
-# `minimumReleaseAgeExclude` allowlist below. Only consider doing this for
-# packages released by trusted organizations with an impeccable security
-# posture (e.g. Replit packsges, react from Meta, typescript from Microsoft). Even then,
-# remove the exclusion once the 1-day window has passed.
+# passed (e.g. an urgent security bugfix), add a `minimumReleaseAgeExclude`
+# allowlist naming that package. Only consider doing this for packages released
+# by trusted organizations with an impeccable security posture (e.g. React
+# from Meta, TypeScript from Microsoft). Remove the exclusion once the 1-day
+# window has passed.
 #
 # Example:
 #   minimumReleaseAgeExclude:
@@ -27,23 +27,12 @@
 # ============================================================================
 minimumReleaseAge: 1440
 
-minimumReleaseAgeExclude:
-  # Exclude @replit scoped packages from the minimum release age check.
-  # These are published by Replit and trusted — the supply-chain attack vector
-  # this setting guards against does not apply to our own packages.
-  - '@replit/*'
-  - stripe-replit-sync
-
 packages:
   - artifacts/*
   - lib/*
   - lib/integrations/*
-  - scripts
 
 catalog:
-  '@replit/vite-plugin-cartographer': ^0.5.1
-  '@replit/vite-plugin-dev-banner': ^0.1.1
-  '@replit/vite-plugin-runtime-error-modal': ^0.0.6
   '@tailwindcss/vite': ^4.1.14
   '@tanstack/react-query': ^5.90.21
   '@types/node': ^25.3.3
@@ -53,7 +42,6 @@ catalog:
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
   drizzle-orm: ^0.45.2
-  framer-motion: ^12.23.24
   i18next: ^26.4.2
   i18next-browser-languagedetector: ^8.2.1
   lucide-react: ^0.545.0
@@ -78,7 +66,7 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
-  # replit deploys linux-x64; win32-x64 is kept so Windows checkouts can run the
+  # Production deploys linux-x64; win32-x64 is kept so Windows checkouts can run the
   # dev servers (esbuild/rollup/oxide/lightningcss all ship native binaries).
   "esbuild>@esbuild/darwin-arm64": "-"
   "esbuild>@esbuild/darwin-x64": "-"

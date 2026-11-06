@@ -3,6 +3,11 @@
  * The values mirror the French copy the app had before i18n landed.
  */
 export default {
+  // ---------------------------------------------------------------- Money
+  // Compact unit suffixes for large amounts; see `lib/money.ts`.
+  "money.thousand": "K",
+  "money.million": "M",
+
   // ------------------------------------------------------------------ Nav
   "nav.dashboard": "Tableau de bord",
   "nav.company": "Identité & Capital",
@@ -14,6 +19,7 @@ export default {
   "nav.reports": "Rapports",
   "nav.analyse": "Analyse",
   "nav.legal": "Veille juridique",
+  "nav.debts": "Dettes",
 
   // --------------------------------------------------------------- Layout
   "layout.accounting": "Comptabilité",
@@ -21,17 +27,11 @@ export default {
   "layout.logout": "Se déconnecter",
   "layout.language": "Langue",
   "layout.menu": "Menu",
-  "app.title": "DJERDJERA Comptable",
 
   // ---------------------------------------------------------------- Common
   "common.loading": "Chargement…",
   "common.save": "Enregistrer",
-  "common.cancel": "Annuler",
-  "common.close": "Fermer",
-  "common.delete": "Supprimer",
   "common.none": "Non spécifié",
-  "common.total": "Total",
-  "common.actions": "Actions",
   "zod.required": "{{field}} est requis",
   "zod.positive": "Doit être un montant positif",
 
@@ -90,7 +90,6 @@ export default {
 
   // ------------------------------------------------------------ Company
   "company.title": "Identité & Capital",
-  "company.taxRegime": "Régime fiscal",
   "company.legalForm": "Forme juridique",
   "company.taxRegimeSystem": "Système fiscal",
   "company.name": "Raison Sociale",
@@ -116,6 +115,7 @@ export default {
   "company.totalCapital": "Total capital",
   "company.capitalBreakdown": "Dont apports : {{own}} — emprunts : {{loans}}",
   "company.fundingType": "Type de financement",
+  "company.fundingAccount": "Compte de réception",
   "company.date": "Date",
   "company.amountDa": "Montant (DA) *",
   "company.labelOptional": "Libellé (optionnel)",
@@ -218,10 +218,6 @@ export default {
     "Sans secteur renseigné, nous ne pouvons pas filtrer les textes qui visent votre métier — vous ne verrez que ceux qui concernent toutes les entreprises.",
   "legal.list.sectorCta": "Renseigner mon activité",
 
-  // -------------------------------------------------------------- Funding
-  "funding.ownFunds": "Apport / Capital",
-  "funding.bankLoan": "Emprunt Bancaire",
-
   // ------------------------------------------------------------ Employees
   "employees.title": "Personnel",
   "employees.subtitle": "Gestion des employés et situations familiales",
@@ -247,7 +243,6 @@ export default {
   "employees.hiredOn": "Embauché le {{date}}",
   "employees.seniority": "{{years}} ans d'ancienneté reconnue",
   "employees.baseSalaryLabel": "Salaire de base",
-  "employees.situation": "Situation familiale",
 
   // ---------------------------------------------------------------- Legal
   "legal.relevance.high": "Priorité élevée",
@@ -466,6 +461,26 @@ export default {
   "journal.table.colCost": "Coût",
   "journal.table.colCump": "CUMP",
   "journal.table.colPayment": "Paiement",
+  "journal.table.colRest": "Reste",
+  "journal.table.actions": "Actions",
+  "journal.actions.fullPay": "Payer entièrement",
+  "journal.actions.partialPay": "Paiement partiel",
+  "journal.actions.details": "Voir les détails",
+  "journal.actions.delete": "Supprimer",
+  "journal.payment.fullTitle": "Payer entièrement la facture",
+  "journal.payment.partialTitle": "Enregistrer un paiement partiel",
+  "journal.payment.detailsTitle": "Historique des paiements",
+  "journal.payment.remaining": "Reste à payer : {{amount}}",
+  "journal.payment.payer": "Payeur",
+  "journal.payment.amount": "Montant",
+  "journal.payment.type": "Type de paiement",
+  "journal.payment.reference": "Référence",
+  "journal.payment.label": "Libellé",
+  "journal.payment.submit": "Enregistrer le paiement",
+  "journal.payment.saved": "Paiement enregistré",
+  "journal.payment.error": "Erreur lors de l'enregistrement du paiement",
+  "journal.payment.loading": "Chargement...",
+  "journal.payment.noPayments": "Aucun paiement enregistré.",
   "journal.entry.title": "Écriture",
   "journal.entry.stockTitle": "Bon de sortie — sortie de stock",
   "journal.entry.total": "Total débit {{debit}} · crédit {{credit}}",
@@ -518,7 +533,9 @@ export default {
   "inventory.movement.unitCostIn":
     "Le coût d'acquisition : il fait bouger le CUMP de l'article.",
   "inventory.movement.unitCostOut":
-    "Laisser 0 pour sortir au CUMP actuel de l'article.",
+    "La sortie est valorisée automatiquement au CUMP de l'article.",
+  "inventory.movement.unitCostOutHint":
+    "Sortie valorisée au CUMP actuel : {{cost}}",
   "inventory.movement.note": "Note / Référence (Optionnel)",
   "inventory.movement.notePlaceholder": "Ex: Ordre de fabrication N°...",
   "inventory.movement.submit": "Valider le mouvement",
@@ -588,6 +605,9 @@ export default {
   "onboarding.step4Title": "Personnel",
   "onboarding.step4Desc":
     "Ajoutez vos collaborateurs. Vous pourrez compléter la liste plus tard.",
+  "onboarding.step5Title": "Dettes anciennes",
+  "onboarding.step5Desc":
+    "Déclarez ce que vous devez et ce qu'on vous doit avant de démarrer. Vous pourrez les gérer ensuite depuis la page Dettes.",
   "onboarding.heading": "Configuration initiale",
   "onboarding.subheading":
     "Configurez votre espace comptable en quelques minutes.",
@@ -595,6 +615,7 @@ export default {
   "onboarding.stepAssets": "Immobilisations",
   "onboarding.stepInventory": "Stocks",
   "onboarding.stepPersonnel": "Personnel",
+  "onboarding.stepDebts": "Dettes",
   "onboarding.stepOf": "Étape {{current}} sur {{total}}",
   "onboarding.back": "Précédent",
   "onboarding.next": "Suivant",
@@ -647,6 +668,24 @@ export default {
   "onboarding.asset.incompleteDesc":
     "Complétez la désignation, la catégorie et la valeur d'acquisition, ou videz les champs pour l'ignorer.",
   "onboarding.asset.rowSummary": "{{category}} — {{cost}} DA HT",
+  "onboarding.debtsAdded_one": "{{count}} dette ajoutée",
+  "onboarding.debtsAdded_other": "{{count}} dettes ajoutées",
+  "onboarding.addDebt": "Ajouter une dette",
+  "onboarding.debt.personName": "Nom de la personne *",
+  "onboarding.debt.personNamePlaceholder": "ex. Ahmed Benali",
+  "onboarding.debt.direction": "Sens de la dette",
+  "onboarding.debt.iOwe": "Je dois",
+  "onboarding.debt.owedToMe": "On me doit",
+  "onboarding.debt.amount": "Montant restant (DA) *",
+  "onboarding.debt.date": "Date",
+  "onboarding.debt.note": "Note (optionnel)",
+  "onboarding.debt.add": "Ajouter",
+  "onboarding.debt.incomplete": "Dette incomplète",
+  "onboarding.debt.incompleteDesc":
+    "Complétez le nom et le montant, ou videz les champs pour l'ignorer.",
+  "onboarding.debt.rowSummary": "{{direction}} — {{amount}} DA",
+  "onboarding.debtsHint":
+    "Ces montants seront marqués comme dettes anciennes sur la page Dettes.",
   "onboarding.toast.done": "Configuration terminée !",
   "onboarding.toast.doneDesc": "Bienvenue sur DJERDJERA Comptable.",
   "onboarding.toast.error": "Erreur lors de l'enregistrement de {{phase}}",
@@ -657,6 +696,7 @@ export default {
   "onboarding.phase.assets": "vos immobilisations",
   "onboarding.phase.inventory": "votre stock",
   "onboarding.phase.employees": "votre personnel",
+  "onboarding.phase.debts": "vos dettes",
   "onboarding.stockInitialNote": "Stock initial — configuration initiale",
 
   // --------------------------------------------------- Company funding page
@@ -670,6 +710,7 @@ export default {
   "companyPage.capitalSubtitle": "Apports et financements",
   "companyPage.fundingDialog": "Ajouter un apport ou emprunt",
   "companyPage.fundingSourceType": "Type de financement",
+  "companyPage.fundingAccount": "Compte de réception",
   "companyPage.fundingDate": "Date",
   "companyPage.fundingAmount": "Montant (DA)",
   "companyPage.fundingLabel": "Libellé (Optionnel)",
@@ -681,6 +722,7 @@ export default {
   "companyPage.fundingEmpty": "Aucun apport ou emprunt enregistré",
   "companyPage.fundingColDate": "Date",
   "companyPage.fundingColType": "Type",
+  "companyPage.fundingColAccount": "Compte",
   "companyPage.fundingColAmount": "Montant",
   "companyPage.fundingOwnShort": "Apport",
   "companyPage.fundingLoanShort": "Emprunt",
@@ -727,6 +769,70 @@ export default {
   "assets.toast.deleted": "Immobilisation supprimée",
   "assets.confirmDelete":
     "Supprimer cette immobilisation et son tableau d'amortissement ?",
+
+  // --------------------------------------------------------------- Debts
+  "debts.title": "Dettes",
+  "debts.subtitle":
+    "Dettes reprises de votre ancienne comptabilité et factures encore à régler",
+  "debts.newDebt": "Nouvelle dette",
+  "debts.summary.toReceive": "Total à recevoir",
+  "debts.summary.toPay": "Total à payer",
+  "debts.summary.oldDebts": "Dettes anciennes",
+  "debts.summary.unpaidInvoices": "Factures avec reste",
+  "debts.oldTitle": "Dettes anciennes",
+  "debts.oldSubtitle": "Saisies lors de la configuration initiale",
+  "debts.oldBadge": "Ancienne dette",
+  "debts.manualBadge": "Nouvelle",
+  "debts.manualTitle": "Nouvelles dettes",
+  "debts.manualSubtitle": "Ajoutées depuis cette page",
+  "debts.invoicesTitle": "Factures avec reste",
+  "debts.invoicesSubtitle":
+    "Ventes et achats dont le paiement n'est pas soldé",
+  "debts.empty": "Aucune dette enregistrée.",
+  "debts.invoicesEmpty": "Aucune facture avec un reste à payer.",
+  "debts.colPerson": "Personne",
+  "debts.colDirection": "Sens",
+  "debts.colAmount": "Montant",
+  "debts.colPaid": "Payé",
+  "debts.colRest": "Reste",
+  "debts.colDate": "Date",
+  "debts.colNote": "Note",
+  "debts.colLabel": "Libellé",
+  "debts.colThirdParty": "Tiers",
+  "debts.colType": "Type",
+  "debts.colTtc": "TTC",
+  "debts.colOrigin": "Origine",
+  "debts.direction.iOwe": "Je dois",
+  "debts.direction.owedToMe": "On me doit",
+  "debts.settled": "Réglée",
+  "debts.actions.pay": "Encaisser / Payer",
+  "debts.actions.delete": "Supprimer",
+  "debts.confirmDelete":
+    "Supprimer cette dette et son historique de paiements ?",
+  "debts.dialog.title": "Ajouter une dette",
+  "debts.dialog.description":
+    "Enregistrez ce que vous devez ou ce qu'on vous doit.",
+  "debts.dialog.submit": "Enregistrer la dette",
+  "debts.form.personName": "Nom de la personne *",
+  "debts.form.personNamePlaceholder": "ex. Ahmed Benali",
+  "debts.form.direction": "Sens",
+  "debts.form.amount": "Montant (DA) *",
+  "debts.form.date": "Date",
+  "debts.form.note": "Note (optionnel)",
+  "debts.payment.title": "Enregistrer un paiement",
+  "debts.payment.remaining": "Reste à payer : {{amount}}",
+  "debts.payment.amount": "Montant *",
+  "debts.payment.date": "Date",
+  "debts.payment.note": "Note (optionnel)",
+  "debts.payment.submit": "Enregistrer le paiement",
+  "debts.payment.saved": "Paiement enregistré",
+  "debts.payment.error": "Erreur lors de l'enregistrement du paiement",
+  "debts.invoice.paymentTitle": "Régler la facture",
+  "debts.invoice.payFull": "Payer entièrement",
+  "debts.invoice.payPartial": "Paiement partiel",
+  "debts.toast.created": "Dette enregistrée",
+  "debts.toast.deleted": "Dette supprimée",
+  "debts.toast.createError": "Erreur lors de l'enregistrement",
 
   // ------------------------------------------------------------- Sector
   "sector.choose": "Choisir une activité…",

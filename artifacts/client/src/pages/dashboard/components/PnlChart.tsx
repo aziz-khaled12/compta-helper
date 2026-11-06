@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, ComposedChart } from "recharts";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
+import { compactTick } from "@/lib/money";
 import { useDashboardState } from "../hooks/useDashboardState";
 
 export function PnlChart({ state }: { state: ReturnType<typeof useDashboardState> }) {
@@ -17,7 +18,7 @@ export function PnlChart({ state }: { state: ReturnType<typeof useDashboardState
             <ComposedChart data={pnl} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
               <XAxis dataKey="monthYear" tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={10} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={compactTick} dx={-10} />
               <Tooltip formatter={(v: number) => formatMoney(v)} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
               <Area type="monotone" dataKey="revenue" name={t("dashboard.pnl.revenue")} stroke="hsl(var(--primary))" fillOpacity={1} fill="hsl(var(--primary)/.1)" />
               <Line type="monotone" dataKey="expenses" name={t("dashboard.pnl.expenses")} stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />

@@ -1,19 +1,20 @@
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { ar, fr } from "date-fns/locale";
 import i18n from "@/i18n";
+import { compactMoney } from "@/lib/money";
 
 function dateLocale() {
   return i18n.resolvedLanguage?.startsWith("ar") ? ar : fr;
 }
 
+/**
+ * Compact money for places a string is required (translated sentences, chart
+ * tooltips, `aria-label` props): `12,35 M DA`. Screens that render the figure
+ * as JSX use `<Money>` instead so the exact amount stays hoverable — see
+ * `lib/money.ts` for why the app scales at K/M at all.
+ */
 export function formatMoney(amount: number | undefined | null): string {
-  if (amount == null) return "0,00 DA";
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  }).format(amount);
+  return compactMoney(amount ?? 0);
 }
 
 export function formatDate(date: string | Date | undefined | null, dateFormat = "dd MMM yyyy"): string {

@@ -62,12 +62,11 @@ export function useCompanyState() {
 
   const fundingForm = useForm<FundingFormValues>({
     resolver: zodResolver(fundingSchema),
-    defaultValues: { source: "OWN_FUNDS", label: "", amount: 0, date: new Date().toISOString().split('T')[0] },
+    defaultValues: { source: "OWN_FUNDS", account: "CASH", label: "", amount: 0, date: new Date().toISOString().split('T')[0] },
   });
 
   useEffect(() => {
     if (company) {
-      console.log("company: ", company)
       companyForm.reset({
         name: company.name ?? "",
         nif: company.nif ?? "",
@@ -79,8 +78,6 @@ export function useCompanyState() {
         // from it, so re-submitting the server's own label would be redundant.
         sectorCode: company.sectorCode ?? null,
       });
-
-      console.log("companyForm: ", companyForm.getValues())
     }
   }, [company, companyForm.reset]);
 

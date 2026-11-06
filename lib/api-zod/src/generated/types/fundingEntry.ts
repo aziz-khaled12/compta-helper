@@ -5,11 +5,14 @@
  * DJERDJERA Comptable API - Algerian small-business accounting
  * OpenAPI spec version: 0.1.0
  */
+import type { FundingEntryAccount } from "./fundingEntryAccount";
 import type { FundingEntrySource } from "./fundingEntrySource";
 
 export interface FundingEntry {
   id: string;
   source: FundingEntrySource;
+  /** Account where the funds were received */
+  account: FundingEntryAccount;
   label?: string | null;
   amount: number;
   date: Date;

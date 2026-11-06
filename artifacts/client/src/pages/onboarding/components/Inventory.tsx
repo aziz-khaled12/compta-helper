@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { compactAmount } from "@/lib/money";
 import { useTranslation } from "react-i18next";
 import type { OnboardingState } from "../hooks/useOnboardingState";
 import { inventorySchema, type InventoryData } from "../types";
@@ -93,7 +94,7 @@ export function Inventory({ state }: { state: OnboardingState }) {
                     category: t(`consts.inventory.category.${item.category}`),
                     qty: item.initialQty,
                     unit: item.unit,
-                    cost: item.unitCostHt.toLocaleString("fr-DZ"),
+                    cost: compactAmount(item.unitCostHt),
                   })}
                 </p>
               </div>
@@ -219,10 +220,10 @@ export function Inventory({ state }: { state: OnboardingState }) {
           onClick={state.backStep}
           className="gap-2"
         >
-          <ChevronLeft className="h-4 w-4" /> {t("onboarding.back")}
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {t("onboarding.back")}
         </Button>
         <Button type="button" onClick={next} className="gap-2">
-          {t("onboarding.next")} <ChevronRight className="h-4 w-4" />
+          {t("onboarding.next")} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
       </div>
     </div>

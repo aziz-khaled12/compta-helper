@@ -14,7 +14,7 @@ export interface InventoryMovementInput {
   quantity: number;
   direction: InventoryMovementInputDirection;
   /**
-   * Required for an IN. Optional for an OUT, where omitting it (or sending 0) applies the article's current CUMP.
+   * Required for an IN. Ignored for an OUT: every exit is valued at the article's current CUMP (the same average at which stock entered).
    * @minimum 0
    */
   unitCostHt?: number | null;

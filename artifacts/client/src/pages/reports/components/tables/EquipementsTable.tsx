@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 import { computeEquipements } from "../../lib/calculations";
 import { THead, MoneyCell, ReportCard, EmptyState } from "./Primitives";
@@ -30,10 +31,10 @@ export function EquipementsTable({
               <td className="px-3 py-2 text-xs text-muted-foreground">{r.ref}</td>
               <MoneyCell v={r.montant} />
               <td className="px-3 py-2 text-xs text-right tabular-nums text-orange-600">
-                {r.amortissement.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}
+                <Money value={r.amortissement} />
               </td>
               <td className="px-3 py-2 text-xs text-right tabular-nums font-semibold text-primary">
-                {r.valeurNette.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}
+                <Money value={r.valeurNette} />
               </td>
               <td className="px-3 py-2 text-xs text-muted-foreground">{r.obs}</td>
             </tr>
@@ -42,9 +43,9 @@ export function EquipementsTable({
         <tfoot>
           <tr className="border-t-2 bg-muted/40 font-bold text-xs">
             <td className="px-3 py-2.5" colSpan={3}>{t("reports.totals")}</td>
-            <td className="px-3 py-2.5 text-right tabular-nums">{totalMontant.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}</td>
-            <td className="px-3 py-2.5 text-right tabular-nums">{totalAmo.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}</td>
-            <td className="px-3 py-2.5 text-right tabular-nums">{totalNet.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA"}</td>
+            <td className="px-3 py-2.5 text-right tabular-nums"><Money value={totalMontant} /></td>
+            <td className="px-3 py-2.5 text-right tabular-nums"><Money value={totalAmo} /></td>
+            <td className="px-3 py-2.5 text-right tabular-nums"><Money value={totalNet} /></td>
             <td className="px-3 py-2.5"></td>
           </tr>
         </tfoot>

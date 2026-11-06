@@ -3,13 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
-// Dev-only Replit plugins. `REPL_ID` is set by the Replit runtime and nowhere
-// else, so this whole block is dead weight — and the runtime-error overlay in
-// particular would otherwise ship inside the production bundle.
-const isReplitDev =
-  process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined;
-
-export default defineConfig(async ({ command }) => {
+export default defineConfig(({ command }) => {
   const rawPort = process.env.FRONTEND_PORT || process.env.PORT;
 
   // Only serving needs a port. `vite build` is driven by CI (Vercel), where
@@ -33,27 +27,10 @@ export default defineConfig(async ({ command }) => {
 
   return {
     base: basePath,
-    plugins: [
-      react(),
-      tailwindcss(),
-      ...(isReplitDev
-        ? [
-            (await import("@replit/vite-plugin-runtime-error-modal")).default(),
-            await import("@replit/vite-plugin-cartographer").then((m) =>
-              m.cartographer({
-                root: path.resolve(import.meta.dirname, ".."),
-              }),
-            ),
-            await import("@replit/vite-plugin-dev-banner").then((m) =>
-              m.devBanner(),
-            ),
-          ]
-        : []),
-    ],
+    plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "src"),
-        "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
       },
       dedupe: ["react", "react-dom"],
     },

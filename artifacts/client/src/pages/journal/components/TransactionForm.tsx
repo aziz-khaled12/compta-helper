@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 import { useJournalState } from "../hooks/useJournalState";
 import { Loader2 } from "lucide-react";
@@ -29,6 +30,7 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
   const [price, setPrice] = useState("");
 
   const watchType = form.watch("type");
+  const watchStatus = form.watch("status");
   const watchItemId = form.watch("itemId");
   const watchQty = form.watch("quantity");
 
@@ -51,6 +53,13 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
   useEffect(() => {
     if (!movesStock) form.setValue("itemId", "");
   }, [movesStock, form]);
+
+  // An open facture is always deferred. Payment channels belong to the
+  // payment modal, so the journal row cannot accidentally become a cash/bank
+  // row while it still has an outstanding balance.
+  useEffect(() => {
+    if (watchStatus !== "PAID") form.setValue("paymentMethod", "CREDIT");
+  }, [watchStatus, form]);
 
   useEffect(() => {
     if (movesStock && qty && price) {
@@ -294,11 +303,11 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
             <div className="bg-muted p-4 rounded-md grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t("journal.form.tvaAmount")}</p>
-                <p className="text-lg font-semibold">{formatMoney(tvaAmount)}</p>
+                <p className="text-lg font-semibold">{<Money value={tvaAmount} />}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-muted-foreground">{t("journal.form.amountTtc")}</p>
-                <p className="text-2xl font-bold text-primary">{formatMoney(amountTtc)}</p>
+                <p className="text-2xl font-bold text-primary">{<Money value={amountTtc} />}</p>
               </div>
             </div>
 

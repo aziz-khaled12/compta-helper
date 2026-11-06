@@ -24,13 +24,29 @@ export function FundingForm({ state }: { state: ReturnType<typeof useCompanyStat
             <FormField control={fundingForm.control} name="source" render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("companyPage.fundingSourceType")}</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={(value) => {
+                  field.onChange(value);
+                  fundingForm.setValue("account", value === "BANK_LOAN" ? "BANK" : "CASH");
+                }} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder={t("companyPage.fundingColType")} /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="OWN_FUNDS">{t("consts.funding.source.OWN_FUNDS")}</SelectItem>
                     <SelectItem value="BANK_LOAN">{t("consts.funding.source.BANK_LOAN")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={fundingForm.control} name="account" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("companyPage.fundingAccount")}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="CASH">{t("consts.transaction.paymentMethod.CASH")}</SelectItem>
+                    <SelectItem value="BANK">{t("consts.transaction.paymentMethod.BANK")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

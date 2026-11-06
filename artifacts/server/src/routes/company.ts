@@ -17,6 +17,11 @@ import { refreshAlertsForCompany } from "../lib/legal/crawl";
 
 const router: IRouter = Router();
 
+function fundingAccount(source: string, account: string | null | undefined): "CASH" | "BANK" {
+  if (account === "CASH" || account === "BANK") return account;
+  return source === "BANK_LOAN" ? "BANK" : "CASH";
+}
+
 /**
  * Resolves a submitted sector code to the pair we store, or rejects it.
  *
@@ -217,6 +222,7 @@ router.get("/company/funding", async (req, res): Promise<void> => {
       rows.map((r) => ({
         id: r.id,
         source: r.source,
+        account: fundingAccount(r.source, r.account),
         label: r.label,
         amount: Number(r.amount),
         date: r.date,
@@ -245,6 +251,7 @@ router.post("/company/funding", async (req, res): Promise<void> => {
     .values({
       companyId,
       source: parsed.data.source,
+      account: parsed.data.account,
       label: parsed.data.label ?? null,
       amount: String(parsed.data.amount),
       date: toIsoDate(parsed.data.date),
@@ -262,6 +269,7 @@ router.post("/company/funding", async (req, res): Promise<void> => {
   res.status(201).json({
     id: row.id,
     source: row.source,
+    account: fundingAccount(row.source, row.account),
     label: row.label,
     amount: Number(row.amount),
     date: row.date,

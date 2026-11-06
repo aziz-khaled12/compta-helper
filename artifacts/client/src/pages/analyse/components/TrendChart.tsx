@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
+import { compactTick } from "@/lib/money";
 import { monthLabel } from "@/lib/months";
 import type { MonthSeries } from "@/lib/analytics/metrics";
 import { useTranslation } from "react-i18next";
@@ -108,7 +109,7 @@ export function TrendChart({ months }: { months: MonthSeries[] }) {
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                tickFormatter={compactTick}
                 dx={-10}
               />
               <YAxis

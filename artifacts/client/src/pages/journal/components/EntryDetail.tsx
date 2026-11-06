@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Money } from "@/components/money";
 import { formatMoney } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import type { JournalEntry } from "../lib/entries";
@@ -65,10 +66,10 @@ function EntryBlock({
                 )}
               </TableCell>
               <TableCell className="py-1 text-xs text-right w-32">
-                {l.debit ? formatMoney(l.debit) : ""}
+                {l.debit ? <Money value={l.debit} /> : ""}
               </TableCell>
               <TableCell className="py-1 text-xs text-right w-32">
-                {l.credit ? formatMoney(l.credit) : ""}
+                {l.credit ? <Money value={l.credit} /> : ""}
               </TableCell>
             </TableRow>
           ))}

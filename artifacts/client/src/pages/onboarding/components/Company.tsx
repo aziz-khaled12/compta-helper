@@ -31,6 +31,7 @@ import {
   taxRegimeLabel,
   type TaxRegimeValue,
 } from "@/lib/company";
+import { compactMoney } from "@/lib/money";
 import type { OnboardingState } from "../hooks/useOnboardingState";
 import { step1Schema, type FundingData, type Step1Data } from "../types";
 
@@ -42,7 +43,7 @@ function today(): string {
 }
 
 function formatDa(value: number): string {
-  return `${value.toLocaleString("fr-DZ")} DA`;
+  return compactMoney(value);
 }
 
 export function Company({ state }: { state: OnboardingState }) {
@@ -62,13 +63,13 @@ export function Company({ state }: { state: OnboardingState }) {
 
   const fundingForm = useForm<FundingData>({
     resolver: zodResolver(fundingSchema),
-    defaultValues: { source: "OWN_FUNDS", label: "", amount: 0, date: today() },
+    defaultValues: { source: "OWN_FUNDS", account: "CASH", label: "", amount: 0, date: today() },
   });
   const source = fundingForm.watch("source");
 
   const addFunding = (values: FundingData) => {
     state.setFunding([...state.funding, values]);
-    fundingForm.reset({ source: "OWN_FUNDS", label: "", amount: 0, date: today() });
+    fundingForm.reset({ source: "OWN_FUNDS", account: "CASH", label: "", amount: 0, date: today() });
   };
 
   const removeFunding = (index: number) =>
@@ -319,7 +320,10 @@ export function Company({ state }: { state: OnboardingState }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("company.fundingType")}</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={(value) => {
+                      field.onChange(value);
+                      fundingForm.setValue("account", value === "BANK_LOAN" ? "BANK" : "CASH");
+                    }}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -332,6 +336,23 @@ export function Company({ state }: { state: OnboardingState }) {
                         <SelectItem value="BANK_LOAN">
                           {fundingSourceLabel("BANK_LOAN")}
                         </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={fundingForm.control}
+                name="account"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("company.fundingAccount")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="CASH">{t("consts.transaction.paymentMethod.CASH")}</SelectItem>
+                        <SelectItem value="BANK">{t("consts.transaction.paymentMethod.BANK")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -439,7 +460,7 @@ export function Company({ state }: { state: OnboardingState }) {
 
       <div className="flex justify-end pt-2">
         <Button type="submit" form={IDENTITY_FORM_ID} className="gap-2">
-          {t("company.next")} <ChevronRight className="h-4 w-4" />
+          {t("company.next")} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
       </div>
     </div>

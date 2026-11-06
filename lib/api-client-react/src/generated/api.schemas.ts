@@ -117,9 +117,22 @@ export const FundingEntrySource = {
   BANK_LOAN: "BANK_LOAN",
 } as const;
 
+/**
+ * Account where the funds were received
+ */
+export type FundingEntryAccount =
+  (typeof FundingEntryAccount)[keyof typeof FundingEntryAccount];
+
+export const FundingEntryAccount = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
 export interface FundingEntry {
   id: string;
   source: FundingEntrySource;
+  /** Account where the funds were received */
+  account: FundingEntryAccount;
   label?: string | null;
   amount: number;
   date: string;
@@ -136,8 +149,21 @@ export const FundingInputSource = {
   BANK_LOAN: "BANK_LOAN",
 } as const;
 
+/**
+ * Account where the funds were received
+ */
+export type FundingInputAccount =
+  (typeof FundingInputAccount)[keyof typeof FundingInputAccount];
+
+export const FundingInputAccount = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
 export interface FundingInput {
   source: FundingInputSource;
+  /** Account where the funds were received */
+  account: FundingInputAccount;
   label?: string | null;
   /** @minimum 0 */
   amount: number;
@@ -233,6 +259,134 @@ export interface Transaction {
   unitCostHt?: number | null;
   /** quantity x unitCostHt. Relieved on a sale (class 6); null otherwise. */
   costOfGoodsSold?: number | null;
+  /** Total amount paid against the facture */
+  paid: number;
+  /** Remaining amount due */
+  rest: number;
+}
+
+export type TransactionPaymentType =
+  (typeof TransactionPaymentType)[keyof typeof TransactionPaymentType];
+
+export const TransactionPaymentType = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
+export interface TransactionPayment {
+  id: string;
+  transactionId: string;
+  date: string;
+  payer: string;
+  /** @minimum 0 */
+  amount: number;
+  type: TransactionPaymentType;
+  reference?: string | null;
+  label?: string | null;
+}
+
+export type TransactionPaymentInputType =
+  (typeof TransactionPaymentInputType)[keyof typeof TransactionPaymentInputType];
+
+export const TransactionPaymentInputType = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
+export interface TransactionPaymentInput {
+  date: string;
+  /** @minLength 1 */
+  payer: string;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  type: TransactionPaymentInputType;
+  reference?: string | null;
+  label?: string | null;
+}
+
+/**
+ * I_OWE is money to pay out, OWED_TO_ME is money to collect
+ */
+export type DebtDirection = (typeof DebtDirection)[keyof typeof DebtDirection];
+
+export const DebtDirection = {
+  I_OWE: "I_OWE",
+  OWED_TO_ME: "OWED_TO_ME",
+} as const;
+
+/**
+ * ONBOARDING rows are the old debts imported by the pre-config wizard
+ */
+export type DebtOrigin = (typeof DebtOrigin)[keyof typeof DebtOrigin];
+
+export const DebtOrigin = {
+  ONBOARDING: "ONBOARDING",
+  MANUAL: "MANUAL",
+} as const;
+
+export interface Debt {
+  id: string;
+  /** Person or business on the other side of the balance */
+  personName: string;
+  /** I_OWE is money to pay out, OWED_TO_ME is money to collect */
+  direction: DebtDirection;
+  /** Outstanding amount on the day it was declared */
+  amount: number;
+  date: string;
+  note?: string | null;
+  /** ONBOARDING rows are the old debts imported by the pre-config wizard */
+  origin: DebtOrigin;
+  /** Total settled against this debt */
+  paid: number;
+  /** Remaining amount owed */
+  rest: number;
+}
+
+export type DebtInputDirection =
+  (typeof DebtInputDirection)[keyof typeof DebtInputDirection];
+
+export const DebtInputDirection = {
+  I_OWE: "I_OWE",
+  OWED_TO_ME: "OWED_TO_ME",
+} as const;
+
+/**
+ * Provenance marker. The onboarding wizard sends ONBOARDING so its rows can be badged as old debts; anything else is MANUAL.
+ */
+export type DebtInputOrigin =
+  (typeof DebtInputOrigin)[keyof typeof DebtInputOrigin];
+
+export const DebtInputOrigin = {
+  ONBOARDING: "ONBOARDING",
+  MANUAL: "MANUAL",
+} as const;
+
+export interface DebtInput {
+  /** @minLength 1 */
+  personName: string;
+  direction: DebtInputDirection;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  date: string;
+  note?: string | null;
+  /** Provenance marker. The onboarding wizard sends ONBOARDING so its rows can be badged as old debts; anything else is MANUAL. */
+  origin?: DebtInputOrigin;
+}
+
+export interface DebtPayment {
+  id: string;
+  debtId: string;
+  date: string;
+  /** @minimum 0 */
+  amount: number;
+  note?: string | null;
+}
+
+export interface DebtPaymentInput {
+  date: string;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  note?: string | null;
 }
 
 export type TransactionInputType =
@@ -359,7 +513,7 @@ export interface InventoryMovementInput {
   quantity: number;
   direction: InventoryMovementInputDirection;
   /**
-   * Required for an IN. Optional for an OUT, where omitting it (or sending 0) applies the article's current CUMP.
+   * Required for an IN. Ignored for an OUT: every exit is valued at the article's current CUMP (the same average at which stock entered).
    * @minimum 0
    */
   unitCostHt?: number | null;

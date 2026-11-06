@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2 } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 import { usePayrollState } from "../hooks/usePayrollState";
 
@@ -30,9 +30,9 @@ export function PayrollTable({ state }: { state: ReturnType<typeof usePayrollSta
               </TableCell>
               {payslip ? (
                 <>
-                  <TableCell className="text-right">{formatMoney(payslip.grossSalary)}</TableCell>
-                  <TableCell className="text-right text-destructive text-sm">-{formatMoney(payslip.cnasDeduction + payslip.irgDeduction)}</TableCell>
-                  <TableCell className="text-right font-bold text-primary">{formatMoney(payslip.netToPay)}</TableCell>
+                  <TableCell className="text-right"><Money value={payslip.grossSalary} /></TableCell>
+                  <TableCell className="text-right text-destructive text-sm">-<Money value={payslip.cnasDeduction + payslip.irgDeduction} /></TableCell>
+                  <TableCell className="text-right font-bold text-primary"><Money value={payslip.netToPay} /></TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={(e) => handleDelete(payslip.id, e)}><Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" /></Button>
                   </TableCell>

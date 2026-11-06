@@ -69,6 +69,7 @@ export function useInventoryState() {
   const openMovementDialog = (type: "IN" | "OUT") => {
     setMovementType(type);
     movementForm.setValue("direction", type);
+    if (type === "OUT") movementForm.setValue("unitCostHt", 0);
     setIsMovementOpen(true);
   };
 
@@ -99,7 +100,13 @@ export function useInventoryState() {
   };
 
   const onSubmitMovement = (values: MovementFormValues) => {
-    createMovement.mutate({ data: values }, {
+    // An OUT is valued by the API at the article's CUMP. Sending no cost makes
+    // that explicit and prevents a stale form value from overriding it.
+    const data = {
+      ...values,
+      unitCostHt: values.direction === "OUT" ? null : values.unitCostHt,
+    };
+    createMovement.mutate({ data }, {
       onSuccess: () => {
         toast.success(i18n.t("inventory.toast.movementSaved"));
         setIsMovementOpen(false);

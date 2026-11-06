@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRightLeft, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
+import { Money } from "@/components/money";
 import { useInventoryState } from "../hooks/useInventoryState";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +14,7 @@ import { useTranslation } from "react-i18next";
 export function MovementHistory({ state }: { state: ReturnType<typeof useInventoryState> }) {
   const { t } = useTranslation();
   const { movements, isMovementOpen, setIsMovementOpen, movementType, openMovementDialog, movementForm, onSubmitMovement, createMovement, items } = state;
+  const selectedItem = items.find((item) => item.id === movementForm.watch("itemId"));
 
   return (
     <div className="space-y-6">
@@ -58,18 +60,22 @@ export function MovementHistory({ state }: { state: ReturnType<typeof useInvento
                   </FormItem>
                 )} />
               </div>
-              <FormField control={movementForm.control} name="unitCostHt" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("inventory.movement.unitCost")}</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground">
-                    {movementType === "IN"
-                      ? t("inventory.movement.unitCostIn")
-                      : t("inventory.movement.unitCostOut")}
-                  </p>
-                </FormItem>
-              )} />
+              {movementType === "IN" ? (
+                <FormField control={movementForm.control} name="unitCostHt" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("inventory.movement.unitCost")}</FormLabel>
+                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">{t("inventory.movement.unitCostIn")}</p>
+                  </FormItem>
+                )} />
+              ) : (
+                <div className="rounded-md bg-muted p-3 text-sm">
+                  {t("inventory.movement.unitCostOutHint", {
+                    cost: formatMoney(selectedItem?.averageCost ?? 0),
+                  })}
+                </div>
+              )}
               <FormField control={movementForm.control} name="note" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("inventory.movement.note")}</FormLabel>
@@ -116,7 +122,7 @@ export function MovementHistory({ state }: { state: ReturnType<typeof useInvento
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{formatDate(m.date)}</span>
-                      <span>{formatMoney(m.unitCostHt)} / u</span>
+                      <span>{<Money value={m.unitCostHt} />} / u</span>
                     </div>
                     {m.note && <div className="text-xs text-muted-foreground mt-1 truncate">{t("inventory.movement.note")}: {m.note}</div>}
                   </div>

@@ -5,8 +5,6 @@ dist
 tmp
 out-tsc
 *.tsbuildinfo
-.expo
-.expo-shared
 
 # dependencies
 node_modules
@@ -34,19 +32,12 @@ node_modules
 /libpeerconnection.log
 npm-debug.log
 yarn-error.log
-testem.log
-/typings
 
 # System Files
 .DS_Store
 Thumbs.db
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
-
-# Replit
-.cache/
-.local/
+# Environment
 .env
 
 # Agents
@@ -54,10 +45,6 @@ Thumbs.db
 .claude
 .opencode
 CLAUDE.md
-replit.md
-
-# Throwaway debugging harnesses (scripts/_tmp_*.ts) — never committed.
-scripts/_tmp_*.ts
 
 # Vercel CLI link state (project/org ids for this checkout).
 .vercel

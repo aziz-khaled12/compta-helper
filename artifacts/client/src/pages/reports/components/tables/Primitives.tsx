@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { fmt } from "@/lib/ledger";
+import { Money } from "@/components/money";
 import { useTranslation } from "react-i18next";
 
 export function EmptyState() {
@@ -31,7 +31,7 @@ export function TFoot({ cols }: { cols: (string | number)[] }) {
       <tr className="border-t-2 bg-muted/40">
         {cols.map((c, i) => (
           <td key={i} className={`px-3 py-2.5 text-xs font-bold ${typeof c === "number" ? "text-right tabular-nums" : ""}`}>
-            {typeof c === "number" ? fmt(c) : c}
+            {typeof c === "number" ? <Money value={c} /> : c}
           </td>
         ))}
       </tr>
@@ -42,7 +42,7 @@ export function TFoot({ cols }: { cols: (string | number)[] }) {
 export function MoneyCell({ v }: { v: number }) {
   return (
     <td className={`px-3 py-2 text-xs text-right tabular-nums ${v < 0 ? "text-destructive" : v > 0 ? "" : "text-muted-foreground"}`}>
-      {v === 0 ? "–" : fmt(v)}
+      {v === 0 ? "–" : <Money value={v} />}
     </td>
   );
 }

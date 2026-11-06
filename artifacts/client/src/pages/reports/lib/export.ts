@@ -1,56 +1,17 @@
 import { toast } from "@/hooks/use-toast";
-import { fmt } from "@/lib/ledger";
+import type { PdfReportInput } from "./pdf";
 
-export async function exportPDF(
-  reportLabel: string,
-  columns: string[],
-  rows: (string | number)[][],
-  summaryRow: (string | number)[] | null,
-  companyName: string,
-  period: string,
-  isLandscape = false,
-) {
+/**
+ * Report exports. Both formats are loaded lazily: `jsPDF` and `xlsx` are
+ * several hundred kilobytes each and most visits to /reports never export.
+ * The PDF layout itself lives in `./pdf`; this file only owns the download and
+ * the toast.
+ */
+export async function exportPDF(report: PdfReportInput) {
   try {
-    const { jsPDF } = await import("jspdf");
-    const { autoTable } = await import("jspdf-autotable");
-
-    const doc = new jsPDF({ orientation: isLandscape ? "landscape" : "portrait" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const today = new Date().toLocaleDateString("fr-DZ");
-
-    // Header
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(companyName.toUpperCase(), pageW / 2, 18, { align: "center" });
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(reportLabel, pageW / 2, 26, { align: "center" });
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text(`Période : ${period}     |     Généré le : ${today}`, pageW / 2, 33, { align: "center" });
-    doc.setTextColor(0);
-    doc.line(14, 36, pageW - 14, 36);
-
-    const bodyRows = rows.map((r) =>
-      r.map((v) => (typeof v === "number" ? fmt(v) : (v || ""))),
-    );
-    const footRows = summaryRow
-      ? [summaryRow.map((v) => (typeof v === "number" ? fmt(v) : (v || "")))]
-      : [];
-
-    autoTable(doc, {
-      startY: 40,
-      head: [columns],
-      body: bodyRows,
-      foot: footRows,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [26, 75, 71], textColor: 255, fontStyle: "bold" },
-      footStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: "bold" },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      margin: { left: 14, right: 14 },
-    });
-
-    doc.save(`${reportLabel.replace(/\s+/g, "_")}_${period}.pdf`);
+    const { buildReportPdf, pdfFileName } = await import("./pdf");
+    const doc = buildReportPdf(report);
+    doc.save(pdfFileName(report.reportLabel, report.period));
     toast({ title: "Succès", description: "Le fichier PDF a été généré." });
   } catch (error) {
     console.error("PDF Export Error:", error);

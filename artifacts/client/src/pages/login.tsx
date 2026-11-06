@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, BarChart2, Users, Package, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { TFunction } from "i18next";
 
 const loginSchema = (t: TFunction) =>
@@ -113,13 +113,6 @@ export default function Login() {
     }
   };
 
-  const FEATURES = [
-    { icon: BarChart2, label: t("auth.featureDashboard"), desc: t("auth.featureDashboardDesc") },
-    { icon: BookOpen, label: t("auth.featureJournal"), desc: t("auth.featureJournalDesc") },
-    { icon: Users, label: t("auth.featurePayroll"), desc: t("auth.featurePayrollDesc") },
-    { icon: Package, label: t("auth.featureStocks"), desc: t("auth.featureStocksDesc") },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--sidebar-background))] to-background flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
@@ -132,17 +125,6 @@ export default function Login() {
           <p className="text-muted-foreground text-sm">
             {t("auth.tagline")}
           </p>
-        </div>
-
-        {/* Feature highlights */}
-        <div className="grid grid-cols-2 gap-3">
-          {FEATURES.map(({ icon: Icon, label, desc }) => (
-            <div key={label} className="rounded-xl border bg-card p-4 space-y-1">
-              <Icon className="h-5 w-5 text-primary" />
-              <p className="text-sm font-medium leading-none">{label}</p>
-              <p className="text-xs text-muted-foreground">{desc}</p>
-            </div>
-          ))}
         </div>
 
         <Card className="shadow-lg">

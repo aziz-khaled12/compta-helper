@@ -29,9 +29,7 @@ tmp
 *.tsbuildinfo
 
 # Scratch harnesses, agent config, and docs. None of it is part of the build.
-scripts/_tmp_*.ts
 .agents
 .claude
 .opencode
 CLAUDE.md
-replit.md

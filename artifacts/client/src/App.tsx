@@ -15,6 +15,7 @@ import {
 import Dashboard from "@/pages/dashboard";
 import Company from "@/pages/company";
 import Journal from "@/pages/journal";
+import Debts from "@/pages/debts";
 import Inventory from "@/pages/inventory";
 import Employees from "@/pages/employees";
 import Payroll from "@/pages/payroll";
@@ -66,6 +67,7 @@ function AppRouter() {
         <Route path="/company" component={Company} />
         <Route path="/resources" component={Assets} />
         <Route path="/journal" component={Journal} />
+        <Route path="/debts" component={Debts} />
         <Route path="/inventory" component={Inventory} />
         <Route path="/employees" component={Employees} />
         <Route path="/payroll" component={Payroll} />

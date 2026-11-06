@@ -4,6 +4,7 @@ import { StepIndicator } from "./components/StepIndicator";
 import { Company } from "./components/Company";
 import { Inventory } from "./components/Inventory";
 import { Personnel } from "./components/Personnel";
+import { Debts } from "./components/Debts";
 import { useOnboardingState } from "./hooks/useOnboardingState";
 import { Assets } from "./components/Resources";
 
@@ -12,12 +13,14 @@ const STEP_TITLES = [
   "onboarding.step2Title",
   "onboarding.step3Title",
   "onboarding.step4Title",
+  "onboarding.step5Title",
 ];
 const STEP_DESCS = [
   "onboarding.step1Desc",
   "onboarding.step2Desc",
   "onboarding.step3Desc",
   "onboarding.step4Desc",
+  "onboarding.step5Desc",
 ];
 
 export default function Onboarding() {
@@ -49,6 +52,7 @@ export default function Onboarding() {
             {state.step === 2 && <Assets state={state} />}
             {state.step === 3 && <Inventory state={state} />}
             {state.step === 4 && <Personnel state={state} />}
+            {state.step === 5 && <Debts state={state} />}
           </CardContent>
         </Card>
       </div>

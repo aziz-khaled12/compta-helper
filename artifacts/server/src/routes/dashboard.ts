@@ -3,6 +3,7 @@ import { eq, desc, inArray, gte } from "drizzle-orm";
 import {
   db,
   transactionsTable,
+  transactionPaymentsTable,
   fundingTable,
   fixedAssetsTable,
   employeesTable,
@@ -268,22 +269,57 @@ router.get("/dashboard/recent-activity", async (req, res): Promise<void> => {
     .where(eq(transactionsTable.companyId, companyId))
     .orderBy(desc(transactionsTable.createdAt))
     .limit(10);
+
+  // `Transaction` requires paid/rest, and they are derived from the payment
+  // rows rather than the stored status — the same rule the journal applies.
+  // Without them this endpoint 500s for any company that has an entry.
+  const payments = rows.length
+    ? await db
+        .select({
+          transactionId: transactionPaymentsTable.transactionId,
+          amount: transactionPaymentsTable.amount,
+        })
+        .from(transactionPaymentsTable)
+        .where(
+          inArray(
+            transactionPaymentsTable.transactionId,
+            rows.map((row) => row.id),
+          ),
+        )
+    : [];
+  const paidByTransaction = new Map<string, number>();
+  for (const payment of payments) {
+    paidByTransaction.set(
+      payment.transactionId,
+      (paidByTransaction.get(payment.transactionId) ?? 0) +
+        Number(payment.amount),
+    );
+  }
+
   res.json(
     GetRecentActivityResponse.parse(
-      rows.map((t) => ({
-        id: t.id,
-        date: t.date,
-        type: t.type,
-        label: t.label,
-        amountHt: Number(t.amountHt),
-        tvaRate: Number(t.tvaRate),
-        tvaAmount: Number(t.tvaAmount),
-        amountTtc: Number(t.amountTtc),
-        paymentMethod: t.paymentMethod,
-        status: t.status,
-        thirdParty: t.thirdParty,
-        category: t.category,
-      })),
+      rows.map((t) => {
+        const total = Number(t.amountTtc);
+        let paid = paidByTransaction.get(t.id) ?? 0;
+        // A legacy PAID entry may predate payment rows; it is fully settled.
+        if (paid === 0 && t.status === "PAID") paid = total;
+        return {
+          id: t.id,
+          date: t.date,
+          type: t.type,
+          label: t.label,
+          amountHt: Number(t.amountHt),
+          tvaRate: Number(t.tvaRate),
+          tvaAmount: Number(t.tvaAmount),
+          amountTtc: total,
+          paymentMethod: t.paymentMethod,
+          status: t.status,
+          thirdParty: t.thirdParty,
+          category: t.category,
+          paid,
+          rest: Math.max(0, total - paid),
+        };
+      }),
     ),
   );
 });

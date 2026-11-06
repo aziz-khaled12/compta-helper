@@ -3,6 +3,7 @@ import { eq, and, desc } from "drizzle-orm";
 import {
   db,
   transactionsTable,
+  transactionPaymentsTable,
   inventoryItemsTable,
   inventoryMovementsTable,
 } from "@workspace/db";
@@ -11,6 +12,10 @@ import {
   ListTransactionsQueryParams,
   CreateTransactionBody,
   DeleteTransactionParams,
+  ListTransactionPaymentsParams,
+  ListTransactionPaymentsResponse,
+  CreateTransactionPaymentParams,
+  CreateTransactionPaymentBody,
 } from "@workspace/api-zod";
 import { getActiveCompanyId } from "../lib/companyContext";
 import { toIsoDate } from "../lib/dates";
@@ -18,7 +23,12 @@ import { computeStockState, cumpFor } from "../lib/stock";
 
 const router: IRouter = Router();
 
-function rowToView(row: typeof transactionsTable.$inferSelect) {
+function rowToView(
+  row: typeof transactionsTable.$inferSelect,
+  paid = row.status === "PAID" ? Number(row.amountTtc) : 0,
+) {
+  const total = Number(row.amountTtc);
+  if (paid === 0 && row.status === "PAID") paid = total;
   return {
     id: row.id,
     date: row.date,
@@ -29,7 +39,7 @@ function rowToView(row: typeof transactionsTable.$inferSelect) {
     tvaAmount: Number(row.tvaAmount),
     amountTtc: Number(row.amountTtc),
     paymentMethod: row.paymentMethod,
-    status: row.status,
+    status: paid >= total ? "PAID" : paid > 0 ? "PARTIAL" : "UNPAID",
     thirdParty: row.thirdParty,
     category: row.category,
     itemId: row.itemId,
@@ -37,6 +47,8 @@ function rowToView(row: typeof transactionsTable.$inferSelect) {
     unitCostHt: row.unitCostHt != null ? Number(row.unitCostHt) : null,
     costOfGoodsSold:
       row.costOfGoodsSold != null ? Number(row.costOfGoodsSold) : null,
+    paid,
+    rest: Math.max(0, total - paid),
   };
 }
 
@@ -62,7 +74,23 @@ router.get("/transactions", async (req, res): Promise<void> => {
     .where(and(...conditions))
     .orderBy(desc(transactionsTable.date), desc(transactionsTable.createdAt))
     .limit(limit);
-  res.json(ListTransactionsResponse.parse(rows.map(rowToView)));
+  // The list is capped at 500; keeping the aggregate lookup explicit avoids
+  // coupling the response to database-specific numeric aggregate types.
+  const paymentRows = await Promise.all(
+    rows.map(async (row) => {
+      const rowPayments = await db
+        .select()
+        .from(transactionPaymentsTable)
+        .where(eq(transactionPaymentsTable.transactionId, row.id));
+      return [row.id, rowPayments.reduce((sum, p) => sum + Number(p.amount), 0)] as const;
+    }),
+  );
+  const paidByTransaction = new Map(paymentRows);
+  res.json(
+    ListTransactionsResponse.parse(
+      rows.map((row) => rowToView(row, paidByTransaction.get(row.id))),
+    ),
+  );
 });
 
 router.post("/transactions", async (req, res): Promise<void> => {
@@ -165,7 +193,10 @@ router.post("/transactions", async (req, res): Promise<void> => {
           tvaRate: String(parsed.data.tvaRate),
           tvaAmount: String(tvaAmount),
           amountTtc: String(amountTtc),
-          paymentMethod: parsed.data.paymentMethod,
+          // Any open facture is deferred even when a payment channel was
+          // selected in the form. The channel belongs to payment records.
+          paymentMethod:
+            parsed.data.status === "PAID" ? parsed.data.paymentMethod : "CREDIT",
           status: parsed.data.status,
           thirdParty: parsed.data.thirdParty ?? null,
           category: parsed.data.category ?? null,
@@ -202,6 +233,165 @@ router.post("/transactions", async (req, res): Promise<void> => {
     return;
   }
   res.status(201).json(rowToView(outcome.row));
+});
+
+router.get("/transactions/:id/payments", async (req, res): Promise<void> => {
+  const params = ListTransactionPaymentsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const companyId = await getActiveCompanyId(req.user?.id);
+  if (!companyId) {
+    res.json([]);
+    return;
+  }
+  const [transaction] = await db
+    .select({ id: transactionsTable.id })
+    .from(transactionsTable)
+    .where(
+      and(
+        eq(transactionsTable.id, params.data.id),
+        eq(transactionsTable.companyId, companyId),
+      ),
+    );
+  if (!transaction) {
+    res.status(404).json({ error: "Facture introuvable." });
+    return;
+  }
+  const rows = await db
+    .select()
+    .from(transactionPaymentsTable)
+    .where(eq(transactionPaymentsTable.transactionId, transaction.id));
+  const responseRows = rows.length
+    ? rows
+    : [];
+  if (responseRows.length === 0) {
+    const [facture] = await db
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.id, transaction.id),
+          eq(transactionsTable.companyId, companyId),
+        ),
+      );
+    if (facture?.status === "PAID") {
+      res.json([
+        {
+          id: `legacy-${facture.id}`,
+          transactionId: facture.id,
+          date: facture.date,
+          payer: facture.thirdParty ?? "",
+          amount: Number(facture.amountTtc),
+          type: facture.paymentMethod === "CASH" ? "CASH" : "BANK",
+          reference: null,
+          label: facture.label,
+        },
+      ]);
+      return;
+    }
+  }
+  res.json(
+    ListTransactionPaymentsResponse.parse(
+      responseRows.map((row) => ({
+        id: row.id,
+        transactionId: row.transactionId,
+        date: row.date,
+        payer: row.payer,
+        amount: Number(row.amount),
+        type: row.type,
+        reference: row.reference,
+        label: row.label,
+      })),
+    ),
+  );
+});
+
+router.post("/transactions/:id/payments", async (req, res): Promise<void> => {
+  const params = CreateTransactionPaymentParams.safeParse(req.params);
+  const parsed = CreateTransactionPaymentBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({
+      error: !params.success
+        ? params.error.message
+        : !parsed.success
+          ? parsed.error.message
+          : "Invalid request",
+    });
+    return;
+  }
+  const companyId = await getActiveCompanyId(req.user?.id);
+  if (!companyId) {
+    res.status(400).json({ error: "Configurez d'abord le profil de l'entreprise" });
+    return;
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [facture] = await tx
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.id, params.data.id),
+          eq(transactionsTable.companyId, companyId),
+        ),
+      );
+    if (!facture) return { error: "Facture introuvable.", status: 404 as const };
+
+    const existing = await tx
+      .select()
+      .from(transactionPaymentsTable)
+      .where(eq(transactionPaymentsTable.transactionId, facture.id));
+    const paid = existing.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const rest = Math.max(0, Number(facture.amountTtc) - paid);
+    if (parsed.data.amount > rest + 0.005) {
+      return { error: "Le montant dépasse le reste à payer.", status: 400 as const };
+    }
+
+    const [payment] = await tx
+      .insert(transactionPaymentsTable)
+      .values({
+        transactionId: facture.id,
+        date: toIsoDate(parsed.data.date),
+        payer: parsed.data.payer,
+        amount: String(parsed.data.amount),
+        type: parsed.data.type,
+        reference: parsed.data.reference ?? null,
+        label: parsed.data.label ?? null,
+      })
+      .returning();
+    if (!payment) return { error: "Insert failed", status: 500 as const };
+
+    const newPaid = paid + parsed.data.amount;
+    await tx
+      .update(transactionsTable)
+      .set({
+        status: newPaid >= Number(facture.amountTtc) - 0.005 ? "PAID" : "PARTIAL",
+        paymentMethod:
+          newPaid >= Number(facture.amountTtc) - 0.005
+            ? parsed.data.type
+            : "CREDIT",
+      })
+      .where(eq(transactionsTable.id, facture.id));
+
+    return { payment, status: 201 as const };
+  });
+  if ("error" in result) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  const payment = result.payment;
+  res.status(201).json({
+    id: payment.id,
+    transactionId: payment.transactionId,
+    date: payment.date,
+    payer: payment.payer,
+    amount: Number(payment.amount),
+    type: payment.type,
+    reference: payment.reference,
+    label: payment.label,
+  });
 });
 
 router.delete("/transactions/:id", async (req, res): Promise<void> => {

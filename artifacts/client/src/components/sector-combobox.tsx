@@ -122,7 +122,7 @@ export function SectorCombobox({
             )}
           >
             <span className="truncate">{triggerLabel || t("sector.choose")}</span>
-            <span className="flex items-center gap-1 shrink-0 ml-2">
+            <span className="flex items-center gap-1 shrink-0 ms-2">
               {value && !disabled && (
                 <span
                   role="button"

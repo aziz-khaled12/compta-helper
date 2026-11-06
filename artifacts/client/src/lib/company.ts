@@ -51,14 +51,27 @@ export function legalFormLabel(form: string | null | undefined): string {
   return i18n.t(`consts.legalForm.${constKey}`);
 }
 
-export const fundingSchema = z.object({
+export const fundingSchema = z.preprocess(
+  (value) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const row = value as { source?: string; account?: string };
+      return {
+        ...row,
+        account: row.account ?? (row.source === "BANK_LOAN" ? "BANK" : "CASH"),
+      };
+    }
+    return value;
+  },
+  z.object({
   source: z.enum(["OWN_FUNDS", "BANK_LOAN"]),
+  account: z.enum(["CASH", "BANK"]),
   label: z.string().optional(),
   amount: z.coerce.number().min(1, "Le montant doit être positif"),
   date: z.string(),
   interestRate: z.coerce.number().optional(),
   durationMonths: z.coerce.number().optional(),
-});
+  }),
+);
 
 export type FundingValues = z.infer<typeof fundingSchema>;
 

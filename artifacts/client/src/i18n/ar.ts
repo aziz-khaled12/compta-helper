@@ -4,6 +4,11 @@
  * verbatim, exactly as they appear in the French source.
  */
 export default {
+  // ---------------------------------------------------------------- Money
+  // Compact unit suffixes for large amounts; see `lib/money.ts`.
+  "money.thousand": "ألف",
+  "money.million": "مليون",
+
   // ------------------------------------------------------------------ Nav
   "nav.dashboard": "لوحة القيادة",
   "nav.company": "الهوية ورأس المال",
@@ -15,6 +20,7 @@ export default {
   "nav.reports": "التقارير",
   "nav.analyse": "التحليل",
   "nav.legal": "الرصد القانوني",
+  "nav.debts": "الديون",
 
   // --------------------------------------------------------------- Layout
   "layout.accounting": "المحاسبة",
@@ -22,17 +28,11 @@ export default {
   "layout.logout": "تسجيل الخروج",
   "layout.language": "اللغة",
   "layout.menu": "القائمة",
-  "app.title": "جرجرة المحاسبة",
 
   // ---------------------------------------------------------------- Common
   "common.loading": "جارٍ التحميل…",
   "common.save": "حفظ",
-  "common.cancel": "إلغاء",
-  "common.close": "إغلاق",
-  "common.delete": "حذف",
   "common.none": "غير محدد",
-  "common.total": "الإجمالي",
-  "common.actions": "الإجراءات",
   "zod.required": "{{field}} مطلوب",
   "zod.positive": "يجب أن يكون مبلغاً موجباً",
 
@@ -91,7 +91,6 @@ export default {
 
   // ------------------------------------------------------------ Company
   "company.title": "الهوية ورأس المال",
-  "company.taxRegime": "النظام الضريبي",
   "company.legalForm": "الشكل القانوني",
   "company.taxRegimeSystem": "النظام الجبائي",
   "company.name": "التسمية الاجتماعية",
@@ -117,6 +116,7 @@ export default {
   "company.totalCapital": "إجمالي رأس المال",
   "company.capitalBreakdown": "منها مساهمات: {{own}} — قروض: {{loans}}",
   "company.fundingType": "نوع التمويل",
+  "company.fundingAccount": "حساب الاستلام",
   "company.date": "التاريخ",
   "company.amountDa": "المبلغ (DA) *",
   "company.labelOptional": "البيان (اختياري)",
@@ -216,10 +216,6 @@ export default {
     "دون تحديد القطاع، لا يمكننا تصفية النصوص التي تخص مهنتك — لن ترى إلا تلك التي تهم جميع المؤسسات.",
   "legal.list.sectorCta": "تحديد نشاطي",
 
-  // -------------------------------------------------------------- Funding
-  "funding.ownFunds": "التمويل الذاتي / رأس المال",
-  "funding.bankLoan": "القرض البنكي",
-
   // ------------------------------------------------------------ Employees
   "employees.title": "الموظفون",
   "employees.subtitle": "تسيير الموظفين والحالات العائلية",
@@ -245,7 +241,6 @@ export default {
   "employees.hiredOn": "توظف في {{date}}",
   "employees.seniority": "{{years}} سنوات من الأقدمية المعترف بها",
   "employees.baseSalaryLabel": "الأجر الأساسي",
-  "employees.situation": "الحالة العائلية",
 
   // ---------------------------------------------------------------- Legal
   "legal.relevance.high": "أولوية عالية",
@@ -460,6 +455,26 @@ export default {
   "journal.table.colCost": "التكلفة",
   "journal.table.colCump": "متوسط التكلفة",
   "journal.table.colPayment": "الدفع",
+  "journal.table.colRest": "المتبقي",
+  "journal.table.actions": "الإجراءات",
+  "journal.actions.fullPay": "دفع كامل",
+  "journal.actions.partialPay": "دفع جزئي",
+  "journal.actions.details": "عرض التفاصيل",
+  "journal.actions.delete": "حذف",
+  "journal.payment.fullTitle": "دفع الفاتورة بالكامل",
+  "journal.payment.partialTitle": "تسجيل دفعة جزئية",
+  "journal.payment.detailsTitle": "سجل الدفعات",
+  "journal.payment.remaining": "المبلغ المتبقي: {{amount}}",
+  "journal.payment.payer": "الدافع",
+  "journal.payment.amount": "المبلغ",
+  "journal.payment.type": "نوع الدفع",
+  "journal.payment.reference": "المرجع",
+  "journal.payment.label": "البيان",
+  "journal.payment.submit": "تسجيل الدفع",
+  "journal.payment.saved": "تم تسجيل الدفع",
+  "journal.payment.error": "تعذر تسجيل الدفع",
+  "journal.payment.loading": "جار التحميل...",
+  "journal.payment.noPayments": "لا توجد دفعات مسجلة.",
   "journal.entry.title": "القيد",
   "journal.entry.stockTitle": "سند الإخراج — إخراج المخزون",
   "journal.entry.total": "إجمالي مدين {{debit}} · دائن {{credit}}",
@@ -511,7 +526,9 @@ export default {
   "inventory.movement.unitCostIn":
     "تكلفة الاقتناء: تغيّر متوسط التكلفة المرجّح للمادة.",
   "inventory.movement.unitCostOut":
-    "اترك 0 للإخراج بمتوسط التكلفة الحالي للمادة.",
+    "يُقيَّم الإخراج تلقائياً بمتوسط التكلفة المرجّح للمادة.",
+  "inventory.movement.unitCostOutHint":
+    "الإخراج بمتوسط التكلفة الحالي: {{cost}}",
   "inventory.movement.note": "ملاحظة / مرجع (اختياري)",
   "inventory.movement.notePlaceholder": "مثال: أمر تصنيع رقم...",
   "inventory.movement.submit": "تأكيد الحركة",
@@ -581,12 +598,16 @@ export default {
   "onboarding.step4Title": "المستخدمون",
   "onboarding.step4Desc":
     "أضف متعاونيك. يمكنك إكمال القائمة لاحقاً.",
+  "onboarding.step5Title": "الديون القديمة",
+  "onboarding.step5Desc":
+    "صرّح بما عليك من ديون وما لك عند الآخرين قبل البدء. يمكنك إدارتها لاحقاً من صفحة الديون.",
   "onboarding.heading": "الإعداد الأولي",
   "onboarding.subheading": "هيّئ مساحتك المحاسبية في بضع دقائق.",
   "onboarding.stepIdentity": "الهوية ورأس المال",
   "onboarding.stepAssets": "التثبيتات",
   "onboarding.stepInventory": "المخزون",
   "onboarding.stepPersonnel": "المستخدمون",
+  "onboarding.stepDebts": "الديون",
   "onboarding.stepOf": "الخطوة {{current}} من {{total}}",
   "onboarding.back": "السابق",
   "onboarding.next": "التالي",
@@ -639,6 +660,24 @@ export default {
   "onboarding.asset.incompleteDesc":
     "أكمل التسمية والفئة وقيمة الاقتناء، أو أفرغ الحقول لتجاهله.",
   "onboarding.asset.rowSummary": "{{category}} — {{cost}} دج دون رسوم",
+  "onboarding.debtsAdded_one": "أُضيف دين واحد",
+  "onboarding.debtsAdded_other": "أُضيفت {{count}} ديون",
+  "onboarding.addDebt": "إضافة دين",
+  "onboarding.debt.personName": "اسم الشخص *",
+  "onboarding.debt.personNamePlaceholder": "مثال: أحمد بن علي",
+  "onboarding.debt.direction": "اتجاه الدين",
+  "onboarding.debt.iOwe": "أنا مدين",
+  "onboarding.debt.owedToMe": "هو مدين لي",
+  "onboarding.debt.amount": "المبلغ المتبقي (دج) *",
+  "onboarding.debt.date": "التاريخ",
+  "onboarding.debt.note": "ملاحظة (اختياري)",
+  "onboarding.debt.add": "إضافة",
+  "onboarding.debt.incomplete": "دين غير مكتمل",
+  "onboarding.debt.incompleteDesc":
+    "أكمل الاسم والمبلغ، أو أفرغ الحقول لتجاهله.",
+  "onboarding.debt.rowSummary": "{{direction}} — {{amount}} دج",
+  "onboarding.debtsHint":
+    "ستُعرض هذه المبالغ كديون قديمة في صفحة الديون.",
   "onboarding.toast.done": "اكتمل الإعداد!",
   "onboarding.toast.doneDesc": "مرحباً بك في DJERDJERA Comptable.",
   "onboarding.toast.error": "خطأ أثناء تسجيل {{phase}}",
@@ -649,6 +688,7 @@ export default {
   "onboarding.phase.assets": "تثبيتاتك",
   "onboarding.phase.inventory": "مخزونك",
   "onboarding.phase.employees": "مستخدموك",
+  "onboarding.phase.debts": "ديونك",
   "onboarding.stockInitialNote": "المخزون الأولي — الإعداد الأولي",
 
   // --------------------------------------------------- Company funding page
@@ -661,6 +701,7 @@ export default {
   "companyPage.capitalSubtitle": "المساهمات والتمويلات",
   "companyPage.fundingDialog": "إضافة مساهمة أو قرض",
   "companyPage.fundingSourceType": "نوع التمويل",
+  "companyPage.fundingAccount": "حساب الاستلام",
   "companyPage.fundingDate": "التاريخ",
   "companyPage.fundingAmount": "المبلغ (دج)",
   "companyPage.fundingLabel": "البيان (اختياري)",
@@ -672,6 +713,7 @@ export default {
   "companyPage.fundingEmpty": "لا توجد مساهمة أو قرض مسجَّل",
   "companyPage.fundingColDate": "التاريخ",
   "companyPage.fundingColType": "النوع",
+  "companyPage.fundingColAccount": "الحساب",
   "companyPage.fundingColAmount": "المبلغ",
   "companyPage.fundingOwnShort": "مساهمة",
   "companyPage.fundingLoanShort": "قرض",
@@ -714,6 +756,67 @@ export default {
   "assets.toast.addError": "خطأ أثناء الإضافة",
   "assets.toast.deleted": "تم حذف التثبيت",
   "assets.confirmDelete": "حذف هذا التثبيت وجدول إهتلاكه؟",
+
+  // --------------------------------------------------------------- Debts
+  "debts.title": "الديون",
+  "debts.subtitle":
+    "ديون منقولة من محاسبتك السابقة وفواتير لم تُسدد بعد",
+  "debts.newDebt": "دين جديد",
+  "debts.summary.toReceive": "إجمالي ما يُستحق لك",
+  "debts.summary.toPay": "إجمالي ما عليك دفعه",
+  "debts.summary.oldDebts": "الديون القديمة",
+  "debts.summary.unpaidInvoices": "فواتير بها رصيد",
+  "debts.oldTitle": "الديون القديمة",
+  "debts.oldSubtitle": "أُدخلت أثناء الإعداد الأولي",
+  "debts.oldBadge": "دين قديم",
+  "debts.manualBadge": "جديد",
+  "debts.manualTitle": "ديون جديدة",
+  "debts.manualSubtitle": "أُضيفت من هذه الصفحة",
+  "debts.invoicesTitle": "فواتير بها رصيد",
+  "debts.invoicesSubtitle": "مبيعات ومشتريات لم يكتمل دفعها",
+  "debts.empty": "لا يوجد دين مسجَّل.",
+  "debts.invoicesEmpty": "لا توجد فاتورة برصيد متبقٍ.",
+  "debts.colPerson": "الشخص",
+  "debts.colDirection": "الاتجاه",
+  "debts.colAmount": "المبلغ",
+  "debts.colPaid": "المدفوع",
+  "debts.colRest": "المتبقي",
+  "debts.colDate": "التاريخ",
+  "debts.colNote": "ملاحظة",
+  "debts.colLabel": "البيان",
+  "debts.colThirdParty": "الطرف",
+  "debts.colType": "النوع",
+  "debts.colTtc": "شامل الرسوم",
+  "debts.colOrigin": "المصدر",
+  "debts.direction.iOwe": "أنا مدين",
+  "debts.direction.owedToMe": "هو مدين لي",
+  "debts.settled": "مسدد",
+  "debts.actions.pay": "تحصيل / دفع",
+  "debts.actions.delete": "حذف",
+  "debts.confirmDelete": "حذف هذا الدين وسجل مدفوعاته؟",
+  "debts.dialog.title": "إضافة دين",
+  "debts.dialog.description": "سجّل ما عليك أو ما يُستحق لك.",
+  "debts.dialog.submit": "تسجيل الدين",
+  "debts.form.personName": "اسم الشخص *",
+  "debts.form.personNamePlaceholder": "مثال: أحمد بن علي",
+  "debts.form.direction": "الاتجاه",
+  "debts.form.amount": "المبلغ (دج) *",
+  "debts.form.date": "التاريخ",
+  "debts.form.note": "ملاحظة (اختياري)",
+  "debts.payment.title": "تسجيل دفعة",
+  "debts.payment.remaining": "المتبقي للدفع: {{amount}}",
+  "debts.payment.amount": "المبلغ *",
+  "debts.payment.date": "التاريخ",
+  "debts.payment.note": "ملاحظة (اختياري)",
+  "debts.payment.submit": "تسجيل الدفعة",
+  "debts.payment.saved": "تم تسجيل الدفعة",
+  "debts.payment.error": "خطأ أثناء تسجيل الدفعة",
+  "debts.invoice.paymentTitle": "تسوية الفاتورة",
+  "debts.invoice.payFull": "دفع كامل",
+  "debts.invoice.payPartial": "دفع جزئي",
+  "debts.toast.created": "تم تسجيل الدين",
+  "debts.toast.deleted": "تم حذف الدين",
+  "debts.toast.createError": "خطأ أثناء التسجيل",
 
   // ------------------------------------------------------------- Sector
   "sector.choose": "اختر نشاطاً…",

@@ -1,4 +1,4 @@
-import { CheckCircle2, Building2, Briefcase, Package, Users } from "lucide-react";
+import { CheckCircle2, Building2, Briefcase, HandCoins, Package, Users } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ const STEPS = [
   { id: 2, labelKey: "onboarding.stepAssets", icon: Briefcase },
   { id: 3, labelKey: "onboarding.stepInventory", icon: Package },
   { id: 4, labelKey: "onboarding.stepPersonnel", icon: Users },
+  { id: 5, labelKey: "onboarding.stepDebts", icon: HandCoins },
 ];
 
 export function StepIndicator({ current }: { current: number }) {

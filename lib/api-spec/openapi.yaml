@@ -14,6 +14,8 @@ tags:
   - name: company
   - name: assets
   - name: transactions
+  - name: debts
+    description: Balances carried over from the user's previous books.
   - name: inventory
   - name: employees
   - name: payroll
@@ -309,6 +311,124 @@ paths:
       responses:
         "204":
           description: Deleted
+  /transactions/{id}/payments:
+    get:
+      operationId: listTransactionPayments
+      tags: [transactions]
+      summary: List payments for a facture
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TransactionPayment" }
+    post:
+      operationId: createTransactionPayment
+      tags: [transactions]
+      summary: Record a payment against a facture
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionPaymentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionPayment" }
+
+  # ============ DEBTS (MIGRATED BALANCES) ============
+  /debts:
+    get:
+      operationId: listDebts
+      tags: [debts]
+      summary: List migrated and manual debts with paid and remaining amounts
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Debt" }
+    post:
+      operationId: createDebt
+      tags: [debts]
+      summary: Record money owed or money to collect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DebtInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Debt" }
+  /debts/{id}:
+    delete:
+      operationId: deleteDebt
+      tags: [debts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+  /debts/{id}/payments:
+    get:
+      operationId: listDebtPayments
+      tags: [debts]
+      summary: List payments recorded against a debt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DebtPayment" }
+    post:
+      operationId: createDebtPayment
+      tags: [debts]
+      summary: Record a payment against a debt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DebtPaymentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DebtPayment" }
 
   # ============ INVENTORY ============
   /inventory/items:
@@ -757,10 +877,11 @@ components:
 
     FundingEntry:
       type: object
-      required: [id, source, amount, date]
+      required: [id, source, account, amount, date]
       properties:
         id: { type: string, format: uuid }
         source: { type: string, enum: [OWN_FUNDS, BANK_LOAN] }
+        account: { type: string, enum: [CASH, BANK], description: "Account where the funds were received" }
         label: { type: string, nullable: true }
         amount: { type: number }
         date: { type: string, format: date }
@@ -768,9 +889,10 @@ components:
         durationMonths: { type: integer, nullable: true }
     FundingInput:
       type: object
-      required: [source, amount, date]
+      required: [source, account, amount, date]
       properties:
         source: { type: string, enum: [OWN_FUNDS, BANK_LOAN] }
+        account: { type: string, enum: [CASH, BANK], description: "Account where the funds were received" }
         label: { type: string, nullable: true }
         amount: { type: number, minimum: 0 }
         date: { type: string, format: date }
@@ -813,7 +935,7 @@ components:
 
     Transaction:
       type: object
-      required: [id, date, type, label, amountHt, tvaRate, tvaAmount, amountTtc, paymentMethod, status]
+      required: [id, date, type, label, amountHt, tvaRate, tvaAmount, amountTtc, paymentMethod, status, paid, rest]
       properties:
         id: { type: string, format: uuid }
         date: { type: string, format: date }
@@ -840,6 +962,81 @@ components:
           type: number
           nullable: true
           description: "quantity x unitCostHt. Relieved on a sale (class 6); null otherwise."
+        paid: { type: number, description: "Total amount paid against the facture" }
+        rest: { type: number, description: "Remaining amount due" }
+    TransactionPayment:
+      type: object
+      required: [id, transactionId, date, payer, amount, type]
+      properties:
+        id: { type: string, format: uuid }
+        transactionId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        payer: { type: string }
+        amount: { type: number, minimum: 0 }
+        type: { type: string, enum: [CASH, BANK] }
+        reference: { type: string, nullable: true }
+        label: { type: string, nullable: true }
+    TransactionPaymentInput:
+      type: object
+      required: [date, payer, amount, type]
+      properties:
+        date: { type: string, format: date }
+        payer: { type: string, minLength: 1 }
+        amount: { type: number, exclusiveMinimum: 0 }
+        type: { type: string, enum: [CASH, BANK] }
+        reference: { type: string, nullable: true }
+        label: { type: string, nullable: true }
+    Debt:
+      type: object
+      required: [id, personName, direction, amount, date, origin, paid, rest]
+      properties:
+        id: { type: string, format: uuid }
+        personName: { type: string, description: "Person or business on the other side of the balance" }
+        direction:
+          type: string
+          enum: [I_OWE, OWED_TO_ME]
+          description: "I_OWE is money to pay out, OWED_TO_ME is money to collect"
+        amount: { type: number, description: "Outstanding amount on the day it was declared" }
+        date: { type: string, format: date }
+        note: { type: string, nullable: true }
+        origin:
+          type: string
+          enum: [ONBOARDING, MANUAL]
+          description: "ONBOARDING rows are the old debts imported by the pre-config wizard"
+        paid: { type: number, description: "Total settled against this debt" }
+        rest: { type: number, description: "Remaining amount owed" }
+    DebtInput:
+      type: object
+      required: [personName, direction, amount, date]
+      properties:
+        personName: { type: string, minLength: 1 }
+        direction: { type: string, enum: [I_OWE, OWED_TO_ME] }
+        amount: { type: number, exclusiveMinimum: 0 }
+        date: { type: string, format: date }
+        note: { type: string, nullable: true }
+        origin:
+          type: string
+          enum: [ONBOARDING, MANUAL]
+          default: MANUAL
+          description: >-
+            Provenance marker. The onboarding wizard sends ONBOARDING so its rows
+            can be badged as old debts; anything else is MANUAL.
+    DebtPayment:
+      type: object
+      required: [id, debtId, date, amount]
+      properties:
+        id: { type: string, format: uuid }
+        debtId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        amount: { type: number, minimum: 0 }
+        note: { type: string, nullable: true }
+    DebtPaymentInput:
+      type: object
+      required: [date, amount]
+      properties:
+        date: { type: string, format: date }
+        amount: { type: number, exclusiveMinimum: 0 }
+        note: { type: string, nullable: true }
     TransactionInput:
       type: object
       required: [date, type, label, amountHt, tvaRate, paymentMethod, status]
@@ -918,8 +1115,8 @@ components:
           nullable: true
           minimum: 0
           description: >-
-            Required for an IN. Optional for an OUT, where omitting it (or
-            sending 0) applies the article's current CUMP.
+            Required for an IN. Ignored for an OUT: every exit is valued at the
+            article's current CUMP (the same average at which stock entered).
         note: { type: string, nullable: true }
 
     Employee:

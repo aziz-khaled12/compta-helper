@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { compactAmount } from "@/lib/money";
 import { useTranslation } from "react-i18next";
 import type { OnboardingState } from "../hooks/useOnboardingState";
 import { assetSchema, type AssetData } from "../types";
@@ -85,7 +86,7 @@ export function Assets({ state }: { state: OnboardingState }) {
                 <p className="text-xs text-muted-foreground">
                   {t("onboarding.asset.rowSummary", {
                     category: asset.category,
-                    cost: asset.costHt.toLocaleString("fr-DZ"),
+                    cost: compactAmount(asset.costHt),
                   })}
                 </p>
               </div>
@@ -218,10 +219,10 @@ export function Assets({ state }: { state: OnboardingState }) {
           onClick={state.backStep}
           className="gap-2"
         >
-          <ChevronLeft className="h-4 w-4" /> {t("onboarding.back")}
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {t("onboarding.back")}
         </Button>
         <Button type="button" onClick={next} className="gap-2">
-          {t("onboarding.next")} <ChevronRight className="h-4 w-4" />
+          {t("onboarding.next")} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
       </div>
     </div>

@@ -10,16 +10,19 @@
  * What is left in `calculations.ts` is the ten `compute*` aggregations, which
  * really are report-specific.
  */
+import { compactMoney } from "./money";
 
 /**
- * Money, as the reports are written: two decimals and the `DA` suffix.
+ * Money, as the reports are written: compact at the thousand/million boundary
+ * and suffixed `DA` — `12,35 M DA`, `1,23 K DA`, `850,00 DA`.
  *
- * The grouping separator here is the narrow no-break space (U+202F) that
- * `toLocaleString("fr-DZ")` produces, not a plain space — which matters if
- * anything ever tries to strip it.
+ * The scaling itself lives in `lib/money.ts` (see there for the tooltip/export
+ * split). This stays the reports' entry point because `calculations.ts` and the
+ * report tables were written against it, and because the PDF export needs the
+ * *exact* twin (`exactMoney`) rather than this one.
  */
 export function fmt(n: number): string {
-  return n.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA";
+  return compactMoney(n);
 }
 
 /**
@@ -130,6 +133,7 @@ export type PayrollRow = {
 export type FundingEntry = {
   id: string;
   source: string;
+  account: "CASH" | "BANK";
   label?: string | null;
   amount: number;
   date: string | Date;

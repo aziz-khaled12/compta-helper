@@ -9,6 +9,8 @@ import {
   useCreateInventoryItem,
   useCreateInventoryMovement,
   useCreateEmployee,
+  useCreateDebt,
+  getListDebtsQueryKey,
   getGetCompanyQueryKey,
   getListFundingQueryKey,
   getGetDashboardSummaryQueryKey,
@@ -18,6 +20,7 @@ import {
   DRAFT_VERSION,
   onboardingDraftSchema,
   type AssetData,
+  type DebtData,
   type EmployeeData,
   type FundingData,
   type InventoryData,
@@ -26,7 +29,7 @@ import {
   type Step1Data,
 } from "../types";
 
-export const TOTAL_STEPS = 4;
+export const TOTAL_STEPS = 5;
 
 /** Long enough to skip most keystrokes, short enough to survive a reflex F5. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -40,6 +43,7 @@ function emptyDraft(): OnboardingDraft {
     assets: [],
     inventory: [],
     employees: [],
+    debts: [],
     completedPhases: [],
   };
 }
@@ -88,6 +92,7 @@ export function useOnboardingState() {
   const createItem = useCreateInventoryItem();
   const createMovement = useCreateInventoryMovement();
   const createEmployee = useCreateEmployee();
+  const createDebt = useCreateDebt();
 
   // Debounced so a field being typed into does not write on every keystroke.
   useEffect(() => {
@@ -129,17 +134,19 @@ export function useOnboardingState() {
     (employees: EmployeeData[]) => patch({ employees }),
     [patch],
   );
+  const setDebts = useCallback((debts: DebtData[]) => patch({ debts }), [patch]);
 
   /**
    * `overrides` lets the last step hand over a row that is still sitting in its
    * form — on the final step there is no going back, so anything the user typed
    * must be committed rather than dropped.
    */
-  const handleFinish = useCallback(async (overrides?: { employees?: EmployeeData[] }) => {
+  const handleFinish = useCallback(async (overrides?: { employees?: EmployeeData[]; debts?: DebtData[] }) => {
     const company = draft.company;
     if (!company) return;
 
     const employees = overrides?.employees ?? draft.employees;
+    const debts = overrides?.debts ?? draft.debts;
 
     const done = new Set<OnboardingPhase>(draft.completedPhases);
     const markDone = (phase: OnboardingPhase) => {
@@ -187,6 +194,7 @@ export function useOnboardingState() {
           await createFunding.mutateAsync({
             data: {
               source: entry.source,
+              account: entry.account,
               label: entry.label || null,
               amount: entry.amount,
               date: entry.date,
@@ -256,6 +264,25 @@ export function useOnboardingState() {
         markDone("employees");
       }
 
+      if (!done.has("debts")) {
+        phaseLabel = i18n.t("onboarding.phase.debts");
+        for (const debt of debts) {
+          await createDebt.mutateAsync({
+            data: {
+              personName: debt.personName,
+              direction: debt.direction,
+              amount: debt.amount,
+              date: debt.date,
+              note: debt.note?.trim() ? debt.note : null,
+              // The badge on the debts page keys off this: a row written here is
+              // a balance carried over from the user's previous books.
+              origin: "ONBOARDING",
+            },
+          });
+        }
+        markDone("debts");
+      }
+
       // Invalidate rather than navigate: App.tsx gates on useGetCompany, so this
       // flips the tree into <Layout> without a full reload (and without the
       // BASE_PATH-relative href that broke production).
@@ -264,6 +291,7 @@ export function useOnboardingState() {
       void queryClient.invalidateQueries({
         queryKey: getGetDashboardSummaryQueryKey(),
       });
+      void queryClient.invalidateQueries({ queryKey: getListDebtsQueryKey() });
 
       // Only once the app is provably past this wizard. Dropping the draft
       // earlier would strand anyone whose final refetch failed on a screen that
@@ -293,6 +321,7 @@ export function useOnboardingState() {
     createItem,
     createMovement,
     createEmployee,
+    createDebt,
   ]);
 
   return {
@@ -305,11 +334,13 @@ export function useOnboardingState() {
     assets: draft.assets,
     inventory: draft.inventory,
     employees: draft.employees,
+    debts: draft.debts,
     setCompany,
     setFunding,
     setAssets,
     setInventory,
     setEmployees,
+    setDebts,
     submitting,
     handleFinish,
   };

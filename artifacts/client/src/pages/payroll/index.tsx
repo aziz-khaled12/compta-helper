@@ -22,7 +22,7 @@ export default function Payroll() {
         </div>
 
         <div className="flex items-center gap-2 bg-card border rounded-md p-1 shadow-sm">
-          <div className="text-muted-foreground pl-3"><Calendar className="h-4 w-4" /></div>
+          <div className="text-muted-foreground ps-3"><Calendar className="h-4 w-4" /></div>
           <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="border-none shadow-none focus-visible:ring-0 h-8" />
         </div>
       </div>

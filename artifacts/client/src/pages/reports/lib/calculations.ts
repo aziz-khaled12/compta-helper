@@ -16,6 +16,7 @@ import type {
 
 export function computeCaisseOrBanque(
   txns: TxRow[],
+  funding: FundingEntry[],
   from: Date,
   to: Date,
   method: "CASH" | "BANK",
@@ -28,8 +29,29 @@ export function computeCaisseOrBanque(
     .filter((t) => inRange(t.date, from, to))
     .sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
+  const fundingRows = funding
+    .filter((f) => (f.account ?? (f.source === "BANK_LOAN" ? "BANK" : "CASH")) === method)
+    .filter((f) => inRange(f.date, from, to));
+  const ledgerRows = [
+    ...rows.map((t) => ({ date: t.date, transaction: t as TxRow, funding: null })),
+    ...fundingRows.map((f) => ({ date: f.date, transaction: null, funding: f })),
+  ].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
   let balance = 0;
-  const data = rows.map((t, i) => {
+  const data = ledgerRows.map((row, i) => {
+    if (row.funding) {
+      balance += row.funding.amount;
+      return {
+        date: fmtDate(row.funding.date),
+        label: row.funding.label || (row.funding.source === "BANK_LOAN" ? "Emprunt bancaire" : "Apport de fonds"),
+        ref: `CAP-${String(i + 1).padStart(3, "0")}`,
+        enc: row.funding.amount,
+        dec: 0,
+        solde: balance,
+        obs: "",
+      };
+    }
+    const t = row.transaction!;
     const enc = t.type === "SALE" ? t.amountTtc : 0;
     const dec = t.type !== "SALE" ? t.amountTtc : 0;
     balance += enc - dec;
@@ -308,6 +330,13 @@ export function computeBilan(
     bankTxns.filter((t) => t.type === "SALE").reduce((s, t) => s + t.amountTtc, 0) -
     bankTxns.filter((t) => t.type !== "SALE").reduce((s, t) => s + t.amountTtc, 0);
 
+  const fundingCaisse = funding
+    .filter((f) => (f.account ?? (f.source === "BANK_LOAN" ? "BANK" : "CASH")) === "CASH")
+    .reduce((s, f) => s + f.amount, 0);
+  const fundingBanque = funding
+    .filter((f) => (f.account ?? (f.source === "BANK_LOAN" ? "BANK" : "CASH")) === "BANK")
+    .reduce((s, f) => s + f.amount, 0);
+
   const creancesClient = sales
     .filter((t) => t.status !== "PAID")
     .reduce((s, t) => s + (t.status === "PARTIAL" ? t.amountTtc * 0.5 : t.amountTtc), 0);
@@ -331,7 +360,9 @@ export function computeBilan(
   const totalDepenses = totalPurchasesHt + totalExpensesHt + totalPayroll + totalDepreciation;
   const resultat = totalRecettes - totalDepenses;
 
-  const totalActif = totalAssetsValue + allTimeStockValue + creancesClient + Math.max(0, caisse) + Math.max(0, banque);
+  const caisseAvecFonds = caisse + fundingCaisse;
+  const banqueAvecFonds = banque + fundingBanque;
+  const totalActif = totalAssetsValue + allTimeStockValue + creancesClient + Math.max(0, caisseAvecFonds) + Math.max(0, banqueAvecFonds);
   const totalPassif = totalFunding + resultat + (tvaNette > 0 ? tvaNette : 0) + dettesExploitation;
 
   return {
@@ -354,8 +385,8 @@ export function computeBilan(
         immobilisations: totalAssetsValue,
         stocks: allTimeStockValue,
         creances: creancesClient,
-        caisse: Math.max(0, caisse),
-        banque: Math.max(0, banque),
+        caisse: Math.max(0, caisseAvecFonds),
+        banque: Math.max(0, banqueAvecFonds),
         total: totalActif,
       },
       passif: {

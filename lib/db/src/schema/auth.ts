@@ -13,7 +13,8 @@ export const refreshTokensTable = pgTable(
   (table) => [index("IDX_refresh_token_user_id").on(table.userId)]
 );
 
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// One row per account. `companies.user_id` references it, and every domain
+// table hangs off the company, so this is the root of the tenancy model.
 export const usersTable = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),

@@ -22,6 +22,7 @@ export function FundingTable({ state }: { state: ReturnType<typeof useCompanySta
           <TableRow>
             <TableHead>{t("companyPage.fundingColDate")}</TableHead>
             <TableHead>{t("companyPage.fundingColType")}</TableHead>
+            <TableHead>{t("companyPage.fundingColAccount")}</TableHead>
             <TableHead className="text-right">{t("companyPage.fundingColAmount")}</TableHead>
             <TableHead className="w-10"></TableHead>
           </TableRow>
@@ -37,6 +38,9 @@ export function FundingTable({ state }: { state: ReturnType<typeof useCompanySta
                   </span>
                   {item.label && <div className="text-xs text-muted-foreground">{item.label}</div>}
                 </div>
+              </TableCell>
+              <TableCell className="text-sm">
+                {item.account === "CASH" ? t("consts.transaction.paymentMethod.CASH") : t("consts.transaction.paymentMethod.BANK")}
               </TableCell>
               <TableCell className="text-right font-medium">{formatMoney(item.amount)}</TableCell>
               <TableCell>

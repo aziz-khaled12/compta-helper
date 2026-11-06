@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useJournalState } from "./hooks/useJournalState";
 import { TransactionForm } from "./components/TransactionForm";
 import { JournalTable } from "./components/JournalTable";
+import { PaymentModal } from "./components/PaymentModal";
+import { PaymentDetailsModal } from "./components/PaymentDetailsModal";
 
 export default function Journal() {
   const { t } = useTranslation();
@@ -26,6 +28,8 @@ export default function Journal() {
       </div>
 
       <TransactionForm state={state} />
+      <PaymentModal state={state} />
+      <PaymentDetailsModal state={state} />
 
       <Card className="bg-card">
         <CardContent className="p-0">

@@ -18,13 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowRight,
   ChevronLeft,
-  Loader2,
+  ChevronRight,
   Plus,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { compactAmount } from "@/lib/money";
 import { useTranslation } from "react-i18next";
 import type { OnboardingState } from "../hooks/useOnboardingState";
 import { employeeSchema, type EmployeeData } from "../types";
@@ -64,9 +64,12 @@ export function Personnel({ state }: { state: OnboardingState }) {
   const removeEmployee = (index: number) =>
     state.setEmployees(state.employees.filter((_, i) => i !== index));
 
-  const finish = () => {
-    // Committing here rather than on "Suivant": this is the last screen, so a
-    // filled-in row that was never clicked "Ajouter" would be lost for good.
+  /**
+   * The wizard no longer ends here — debts are step 5 — so a row that was typed
+   * but never committed must ride along with "Suivant" or it would vanish when
+   * this screen unmounts.
+   */
+  const next = () => {
     const pending = form.getValues();
     const parsed = employeeSchema.safeParse(pending);
     const started =
@@ -74,7 +77,7 @@ export function Personnel({ state }: { state: OnboardingState }) {
       pending.position.trim() !== "" ||
       pending.baseSalary > 0;
 
-    // Half-filled rather than empty: say so instead of finishing without it.
+    // Half-filled rather than empty: say so instead of advancing without it.
     if (started && !parsed.success) {
       toast.error(t("onboarding.employee.incomplete"), {
         description: t("onboarding.employee.incompleteDesc"),
@@ -82,10 +85,10 @@ export function Personnel({ state }: { state: OnboardingState }) {
       return;
     }
 
-    const employees = parsed.success
-      ? [...state.employees, parsed.data]
-      : state.employees;
-    void state.handleFinish({ employees });
+    if (parsed.success) {
+      state.setEmployees([...state.employees, parsed.data]);
+    }
+    state.nextStep();
   };
 
   return (
@@ -105,7 +108,7 @@ export function Personnel({ state }: { state: OnboardingState }) {
                 <p className="text-xs text-muted-foreground">
                   {t("onboarding.employee.rowSummary", {
                     position: employee.position,
-                    salary: employee.baseSalary.toLocaleString("fr-DZ"),
+                    salary: compactAmount(employee.baseSalary),
                     situation: t(`consts.employee.familySituation.${employee.familySituation}`),
                   })}
                 </p>
@@ -245,23 +248,15 @@ export function Personnel({ state }: { state: OnboardingState }) {
           className="gap-2"
           disabled={state.submitting}
         >
-          <ChevronLeft className="h-4 w-4" /> {t("onboarding.back")}
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {t("onboarding.back")}
         </Button>
         <Button
           type="button"
-          onClick={finish}
+          onClick={next}
           disabled={state.submitting}
           className="gap-2"
         >
-          {state.submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> {t("onboarding.saving")}
-            </>
-          ) : (
-            <>
-              {t("onboarding.finish")} <ArrowRight className="h-4 w-4" />
-            </>
-          )}
+          {t("onboarding.next")} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
       </div>
     </div>

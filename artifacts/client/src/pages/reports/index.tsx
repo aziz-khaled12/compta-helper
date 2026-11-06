@@ -80,8 +80,8 @@ export default function Reports() {
   // Computations
   const computedData = useMemo(() => {
     switch (filters.reportId) {
-      case "caisse": return computeCaisseOrBanque(txns as any, from, to, "CASH");
-      case "banque": return computeCaisseOrBanque(txns as any, from, to, "BANK");
+      case "caisse": return computeCaisseOrBanque(txns as any, funding as any, from, to, "CASH");
+      case "banque": return computeCaisseOrBanque(txns as any, funding as any, from, to, "BANK");
       case "stocks": return computeStocks(mvsWithNames as any, from, to);
       case "achats": return computeAchatsOrVentes(txns as any, from, to, "PURCHASE");
       case "ventes": return computeAchatsOrVentes(txns as any, from, to, "SALE");
@@ -118,7 +118,13 @@ export default function Reports() {
   );
 
   // Export helpers
-  function getTableData() {
+  function getTableData(): {
+    cols: string[] | null;
+    rows: (string | number)[][];
+    summary: (string | number)[] | null;
+    /** Rows that open a group — the G50's month headings. */
+    groupRows?: number[];
+  } {
     const reportLabel = REPORT_TYPES.find((r) => r.id === filters.reportId)?.label || "";
 
     switch (filters.reportId) {
@@ -191,7 +197,9 @@ export default function Reports() {
       case "g50": {
         const d = computedData as ReturnType<typeof computeG50>;
         const rows: (string | number)[][] = [];
+        const groupRows: number[] = [];
         for (const m of d.months) {
+          groupRows.push(rows.length);
           rows.push([monthLabel(m.monthYear), ""]);
           rows.push(["  TVA collectée", m.tvaCollectee]);
           rows.push(["  TVA déductible", m.tvaDeductible]);
@@ -208,6 +216,7 @@ export default function Reports() {
           cols: ["Rubrique", "Montant (DA)"],
           rows,
           summary: ["TOTAL À VERSER", d.totals.total],
+          groupRows,
         };
       }
       case "g12": {
@@ -234,10 +243,19 @@ export default function Reports() {
 
   async function handlePDF() {
     const wide = ["achats", "ventes", "bilan"].includes(filters.reportId);
-    const { cols, rows, summary } = getTableData();
+    const { cols, rows, summary, groupRows } = getTableData();
     const reportLabel = REPORT_TYPES.find((r) => r.id === filters.reportId)?.label || "";
     if (!cols) return;
-    await exportPDF(reportLabel, cols, rows, summary, companyName, period, wide);
+    await exportPDF({
+      reportLabel,
+      columns: cols,
+      rows,
+      summaryRow: summary,
+      companyName,
+      period,
+      isLandscape: wide,
+      groupRows,
+    });
   }
 
   async function handleExcel() {

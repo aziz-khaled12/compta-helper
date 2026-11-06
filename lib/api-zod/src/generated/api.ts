@@ -176,6 +176,9 @@ export const UpsertCompanyResponse = zod.object({
 export const ListFundingResponseItem = zod.object({
   id: zod.string().uuid(),
   source: zod.enum(["OWN_FUNDS", "BANK_LOAN"]),
+  account: zod
+    .enum(["CASH", "BANK"])
+    .describe("Account where the funds were received"),
   label: zod.string().nullish(),
   amount: zod.number(),
   date: zod.coerce.date(),
@@ -194,6 +197,9 @@ export const createFundingBodyAmountMin = 0;
 
 export const CreateFundingBody = zod.object({
   source: zod.enum(["OWN_FUNDS", "BANK_LOAN"]),
+  account: zod
+    .enum(["CASH", "BANK"])
+    .describe("Account where the funds were received"),
   label: zod.string().nullish(),
   amount: zod.number().min(createFundingBodyAmountMin),
   date: zod.coerce.date(),
@@ -317,6 +323,8 @@ export const ListTransactionsResponseItem = zod.object({
     .describe(
       "quantity x unitCostHt. Relieved on a sale (class 6); null otherwise.",
     ),
+  paid: zod.number().describe("Total amount paid against the facture"),
+  rest: zod.number().describe("Remaining amount due"),
 });
 export const ListTransactionsResponse = zod.array(ListTransactionsResponseItem);
 
@@ -360,6 +368,132 @@ export const CreateTransactionBody = zod.object({
 
 export const DeleteTransactionParams = zod.object({
   id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary List payments for a facture
+ */
+export const ListTransactionPaymentsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const listTransactionPaymentsResponseAmountMin = 0;
+
+export const ListTransactionPaymentsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  transactionId: zod.string().uuid(),
+  date: zod.coerce.date(),
+  payer: zod.string(),
+  amount: zod.number().min(listTransactionPaymentsResponseAmountMin),
+  type: zod.enum(["CASH", "BANK"]),
+  reference: zod.string().nullish(),
+  label: zod.string().nullish(),
+});
+export const ListTransactionPaymentsResponse = zod.array(
+  ListTransactionPaymentsResponseItem,
+);
+
+/**
+ * @summary Record a payment against a facture
+ */
+export const CreateTransactionPaymentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createTransactionPaymentBodyAmountExclusiveMin = 0;
+
+export const CreateTransactionPaymentBody = zod.object({
+  date: zod.coerce.date(),
+  payer: zod.string().min(1),
+  amount: zod.number().gt(createTransactionPaymentBodyAmountExclusiveMin),
+  type: zod.enum(["CASH", "BANK"]),
+  reference: zod.string().nullish(),
+  label: zod.string().nullish(),
+});
+
+/**
+ * @summary List migrated and manual debts with paid and remaining amounts
+ */
+export const ListDebtsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  personName: zod
+    .string()
+    .describe("Person or business on the other side of the balance"),
+  direction: zod
+    .enum(["I_OWE", "OWED_TO_ME"])
+    .describe("I_OWE is money to pay out, OWED_TO_ME is money to collect"),
+  amount: zod
+    .number()
+    .describe("Outstanding amount on the day it was declared"),
+  date: zod.coerce.date(),
+  note: zod.string().nullish(),
+  origin: zod
+    .enum(["ONBOARDING", "MANUAL"])
+    .describe(
+      "ONBOARDING rows are the old debts imported by the pre-config wizard",
+    ),
+  paid: zod.number().describe("Total settled against this debt"),
+  rest: zod.number().describe("Remaining amount owed"),
+});
+export const ListDebtsResponse = zod.array(ListDebtsResponseItem);
+
+/**
+ * @summary Record money owed or money to collect
+ */
+
+export const createDebtBodyAmountExclusiveMin = 0;
+
+export const createDebtBodyOriginDefault = `MANUAL`;
+
+export const CreateDebtBody = zod.object({
+  personName: zod.string().min(1),
+  direction: zod.enum(["I_OWE", "OWED_TO_ME"]),
+  amount: zod.number().gt(createDebtBodyAmountExclusiveMin),
+  date: zod.coerce.date(),
+  note: zod.string().nullish(),
+  origin: zod
+    .enum(["ONBOARDING", "MANUAL"])
+    .default(createDebtBodyOriginDefault)
+    .describe(
+      "Provenance marker. The onboarding wizard sends ONBOARDING so its rows can be badged as old debts; anything else is MANUAL.",
+    ),
+});
+
+export const DeleteDebtParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary List payments recorded against a debt
+ */
+export const ListDebtPaymentsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const listDebtPaymentsResponseAmountMin = 0;
+
+export const ListDebtPaymentsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  debtId: zod.string().uuid(),
+  date: zod.coerce.date(),
+  amount: zod.number().min(listDebtPaymentsResponseAmountMin),
+  note: zod.string().nullish(),
+});
+export const ListDebtPaymentsResponse = zod.array(ListDebtPaymentsResponseItem);
+
+/**
+ * @summary Record a payment against a debt
+ */
+export const CreateDebtPaymentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createDebtPaymentBodyAmountExclusiveMin = 0;
+
+export const CreateDebtPaymentBody = zod.object({
+  date: zod.coerce.date(),
+  amount: zod.number().gt(createDebtPaymentBodyAmountExclusiveMin),
+  note: zod.string().nullish(),
 });
 
 /**
@@ -437,7 +571,7 @@ export const CreateInventoryMovementBody = zod.object({
     .min(createInventoryMovementBodyUnitCostHtMin)
     .nullish()
     .describe(
-      "Required for an IN. Optional for an OUT, where omitting it (or sending 0) applies the article's current CUMP.",
+      "Required for an IN. Ignored for an OUT: every exit is valued at the article's current CUMP (the same average at which stock entered).",
     ),
   note: zod.string().nullish(),
 });
@@ -622,6 +756,8 @@ export const GetRecentActivityResponseItem = zod.object({
     .describe(
       "quantity x unitCostHt. Relieved on a sale (class 6); null otherwise.",
     ),
+  paid: zod.number().describe("Total amount paid against the facture"),
+  rest: zod.number().describe("Remaining amount due"),
 });
 export const GetRecentActivityResponse = zod.array(
   GetRecentActivityResponseItem,

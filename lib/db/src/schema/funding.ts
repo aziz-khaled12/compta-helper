@@ -14,6 +14,9 @@ export const fundingTable = pgTable("funding_entries", {
     .notNull()
     .references(() => companiesTable.id, { onDelete: "cascade" }),
   source: varchar("source", { length: 20 }).notNull(),
+  // Nullable for legacy rows created before funding location was tracked.
+  // Reads fall back to CASH for own funds and BANK for loans.
+  account: varchar("account", { length: 10 }),
   label: varchar("label", { length: 255 }),
   amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
   date: date("date").notNull(),

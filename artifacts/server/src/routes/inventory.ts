@@ -207,12 +207,13 @@ router.post("/inventory/movements", async (req, res): Promise<void> => {
     return;
   }
 
-  // A hand-entered OUT that does not name a cost is relieved at the article's
-  // CUMP, so it agrees with the sales the journal posts automatically. An IN
-  // has no such fallback: a receipt into stock with no cost would value the
-  // article at zero and corrupt every CUMP computed after it.
+  // An OUT always leaves at the article's CUMP, whatever the caller sent: a
+  // hand-entered cost must never override the average, or an exit would not be
+  // valued at the same price the stock entered with. An IN has no such
+  // fallback: a receipt into stock with no cost would value the article at
+  // zero and corrupt every CUMP computed after it.
   let unitCostHt = parsed.data.unitCostHt ?? 0;
-  if (parsed.data.direction === "OUT" && !unitCostHt) {
+  if (parsed.data.direction === "OUT") {
     const existing = await db
       .select()
       .from(inventoryMovementsTable)

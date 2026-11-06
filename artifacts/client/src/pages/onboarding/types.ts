@@ -34,6 +34,18 @@ export const inventorySchema = z.object({
 });
 
 /**
+ * A balance the migrating user brings from their old books. `amount` is what is
+ * still owed today, not the original total — see `debts` in `lib/db`.
+ */
+export const debtSchema = z.object({
+  personName: z.string().min(2, "Nom requis"),
+  direction: z.enum(["I_OWE", "OWED_TO_ME"]),
+  amount: z.coerce.number().positive("Montant requis"),
+  date: z.string().min(10),
+  note: z.string().optional(),
+});
+
+/**
  * These must match EmployeeInput.familySituation in openapi.yaml exactly —
  * `MARRIED_1` is not a value the API accepts, and sending it fails the whole
  * request with a 400.
@@ -58,6 +70,7 @@ export type Step1Data = z.infer<typeof step1Schema>;
 export type FundingData = z.infer<typeof fundingEntrySchema>;
 export type AssetData = z.infer<typeof assetSchema>;
 export type InventoryData = z.infer<typeof inventorySchema>;
+export type DebtData = z.infer<typeof debtSchema>;
 export type EmployeeData = z.infer<typeof employeeSchema>;
 
 /**
@@ -70,6 +83,7 @@ export const ONBOARDING_PHASES = [
   "assets",
   "inventory",
   "employees",
+  "debts",
 ] as const;
 
 export type OnboardingPhase = (typeof ONBOARDING_PHASES)[number];
@@ -80,12 +94,15 @@ export const DRAFT_VERSION = 1;
 
 export const onboardingDraftSchema = z.object({
   version: z.literal(DRAFT_VERSION),
-  step: z.number().int().min(1).max(4),
+  step: z.number().int().min(1).max(5),
   company: step1Schema.nullable(),
   funding: z.array(fundingEntrySchema),
   assets: z.array(assetSchema),
   inventory: z.array(inventorySchema),
   employees: z.array(employeeSchema),
+  // Defaulted so a draft written before the debts step existed still parses —
+  // same reasoning as `sectorCode` in step1Schema; no version bump needed.
+  debts: z.array(debtSchema).default([]),
   completedPhases: z.array(z.enum(ONBOARDING_PHASES)).default([]),
 });
 
