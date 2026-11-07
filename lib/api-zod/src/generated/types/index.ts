@@ -69,6 +69,7 @@ export * from "./registerRequest";
 export * from "./tokenResponse";
 export * from "./transaction";
 export * from "./transactionInput";
+export * from "./transactionInputPaidMethod";
 export * from "./transactionInputPaymentMethod";
 export * from "./transactionInputStatus";
 export * from "./transactionInputType";

@@ -23,25 +23,55 @@ import {
 } from "@workspace/api-client-react";
 import type { Transaction } from "@workspace/api-client-react";
 
-export const transactionSchema = z.object({
-  type: z.enum(["SALE", "PURCHASE", "EXPENSE"]),
-  date: z.string(),
-  label: z.string().min(1, i18n.t("zod.required", { field: i18n.t("journal.form.label") })),
-  thirdParty: z.string().optional(),
-  category: z.string().optional(),
-  amountHt: z.coerce.number().min(0, i18n.t("zod.positive")),
-  tvaRate: z.coerce.number().min(0).max(100),
-  paymentMethod: z.enum(["CASH", "BANK", "CREDIT"]),
-  status: z.enum(["PAID", "UNPAID", "PARTIAL"]),
-  /**
-   * The article this entry moves. Optional: an entry that names none behaves
-   * exactly as it did before the perpetual system existed, and is written to the
-   * books without a stock side.
-   */
-  itemId: z.string().optional(),
-  /** Required by the API whenever `itemId` is set. */
-  quantity: z.coerce.number().min(0).optional(),
-});
+export const transactionSchema = z
+  .object({
+    type: z.enum(["SALE", "PURCHASE", "EXPENSE"]),
+    date: z.string(),
+    label: z.string().min(1, i18n.t("zod.required", { field: i18n.t("journal.form.label") })),
+    thirdParty: z.string().optional(),
+    category: z.string().optional(),
+    amountHt: z.coerce.number().min(0, i18n.t("zod.positive")),
+    tvaRate: z.coerce.number().min(0).max(100),
+    paymentMethod: z.enum(["CASH", "BANK", "CREDIT"]),
+    status: z.enum(["PAID", "UNPAID", "PARTIAL"]),
+    /**
+     * Amount already settled on a partial entry. It is stored as a real payment
+     * row, since the API derives the displayed status from those rows.
+     */
+    paidAmount: z.coerce.number().min(0).optional(),
+    paidMethod: z.enum(["CASH", "BANK"]).optional(),
+    /**
+     * The article this entry moves. Optional: an entry that names none behaves
+     * exactly as it did before the perpetual system existed, and is written to the
+     * books without a stock side.
+     */
+    itemId: z.string().optional(),
+    /** Required by the API whenever `itemId` is set. */
+    quantity: z.coerce.number().min(0).optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (values.status !== "PARTIAL") return;
+    // The advance has to leave something due; an amount that reaches the TTC is
+    // simply a paid entry, and zero would read back as "impayé".
+    const ttc = values.amountHt * (1 + values.tvaRate / 100);
+    const paid = values.paidAmount ?? 0;
+    if (!(paid > 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["paidAmount"],
+        message: i18n.t("zod.partialPaidRequired"),
+      });
+      return;
+    }
+    if (paid >= ttc - 0.005) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["paidAmount"],
+        message: i18n.t("zod.partialPaidTooHigh"),
+      });
+    }
+  });
+
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
@@ -75,6 +105,8 @@ export function useJournalState() {
       tvaRate: 19,
       paymentMethod: "BANK",
       status: "PAID",
+      paidAmount: 0,
+      paidMethod: "BANK",
       itemId: "",
       quantity: 0,
     },
@@ -119,8 +151,22 @@ export function useJournalState() {
     const itemId = values.itemId || null;
     const quantity = itemId ? (values.quantity ?? 0) : null;
 
+    // The advance is only sent for a partial entry; the API refuses it for any
+    // other status, and a fully paid entry needs no payment row.
+    const { paidAmount, paidMethod, ...entry } = values;
+    const data =
+      values.status === "PARTIAL"
+        ? {
+            ...entry,
+            itemId,
+            quantity,
+            paidAmount: paidAmount ?? 0,
+            paidMethod: paidMethod ?? "BANK",
+          }
+        : { ...entry, itemId, quantity };
+
     createTransaction.mutate(
-      { data: { ...values, itemId, quantity } },
+      { data },
       {
         onSuccess: () => {
           toast.success(i18n.t("journal.toast.created"));
@@ -135,6 +181,8 @@ export function useJournalState() {
             tvaRate: 19,
             paymentMethod: "BANK",
             status: "PAID",
+            paidAmount: 0,
+            paidMethod: "BANK",
             itemId: "",
             quantity: 0,
           });

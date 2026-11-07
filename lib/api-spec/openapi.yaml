@@ -1048,6 +1048,19 @@ components:
         tvaRate: { type: number, minimum: 0, maximum: 100 }
         paymentMethod: { type: string, enum: [CASH, BANK, CREDIT] }
         status: { type: string, enum: [PAID, UNPAID, PARTIAL] }
+        paidAmount:
+          type: number
+          minimum: 0
+          description: >-
+            Amount already settled when the entry is created, recorded as a
+            payment row against the facture. Only valid with status PARTIAL,
+            where it must be greater than zero and strictly below amountTtc.
+        paidMethod:
+          type: string
+          enum: [CASH, BANK]
+          nullable: true
+          description: >-
+            Channel the initial partial payment went through. Defaults to BANK.
         thirdParty: { type: string, nullable: true }
         category: { type: string, nullable: true }
         itemId:

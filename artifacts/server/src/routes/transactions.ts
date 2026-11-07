@@ -20,15 +20,16 @@ import {
 import { getActiveCompanyId } from "../lib/companyContext";
 import { toIsoDate } from "../lib/dates";
 import { computeStockState, cumpFor } from "../lib/stock";
+import { factureState, paidByTransactionId } from "../lib/factureState";
 
 const router: IRouter = Router();
 
 function rowToView(
   row: typeof transactionsTable.$inferSelect,
-  paid = row.status === "PAID" ? Number(row.amountTtc) : 0,
+  paid = 0,
 ) {
   const total = Number(row.amountTtc);
-  if (paid === 0 && row.status === "PAID") paid = total;
+  const state = factureState(total, row.status, paid);
   return {
     id: row.id,
     date: row.date,
@@ -39,7 +40,7 @@ function rowToView(
     tvaAmount: Number(row.tvaAmount),
     amountTtc: Number(row.amountTtc),
     paymentMethod: row.paymentMethod,
-    status: paid >= total ? "PAID" : paid > 0 ? "PARTIAL" : "UNPAID",
+    status: state.status,
     thirdParty: row.thirdParty,
     category: row.category,
     itemId: row.itemId,
@@ -47,8 +48,8 @@ function rowToView(
     unitCostHt: row.unitCostHt != null ? Number(row.unitCostHt) : null,
     costOfGoodsSold:
       row.costOfGoodsSold != null ? Number(row.costOfGoodsSold) : null,
-    paid,
-    rest: Math.max(0, total - paid),
+    paid: state.paid,
+    rest: state.rest,
   };
 }
 
@@ -74,18 +75,9 @@ router.get("/transactions", async (req, res): Promise<void> => {
     .where(and(...conditions))
     .orderBy(desc(transactionsTable.date), desc(transactionsTable.createdAt))
     .limit(limit);
-  // The list is capped at 500; keeping the aggregate lookup explicit avoids
-  // coupling the response to database-specific numeric aggregate types.
-  const paymentRows = await Promise.all(
-    rows.map(async (row) => {
-      const rowPayments = await db
-        .select()
-        .from(transactionPaymentsTable)
-        .where(eq(transactionPaymentsTable.transactionId, row.id));
-      return [row.id, rowPayments.reduce((sum, p) => sum + Number(p.amount), 0)] as const;
-    }),
-  );
-  const paidByTransaction = new Map(paymentRows);
+  // The list is capped at 500, so the settled totals for every row come back in
+  // one grouped query rather than one per entry.
+  const paidByTransaction = await paidByTransactionId(rows.map((row) => row.id));
   res.json(
     ListTransactionsResponse.parse(
       rows.map((row) => rowToView(row, paidByTransaction.get(row.id))),
@@ -109,6 +101,27 @@ router.post("/transactions", async (req, res): Promise<void> => {
   const tvaAmount = parsed.data.amountHt * (parsed.data.tvaRate / 100);
   const amountTtc = parsed.data.amountHt + tvaAmount;
   const { itemId, quantity } = parsed.data;
+  const paidAmount = parsed.data.paidAmount ?? 0;
+
+  // A partial entry is only meaningful when some of the facture was actually
+  // settled: the list derives its status from the payment rows, so a PARTIAL
+  // row without a payment would come back as "impayé". The settled amount must
+  // also leave something due, otherwise the entry is simply PAID.
+  if (parsed.data.status === "PARTIAL") {
+    if (!(paidAmount > 0) || paidAmount >= amountTtc - 0.005) {
+      res.status(400).json({
+        error:
+          "Le montant déjà payé doit être supérieur à 0 et inférieur au montant TTC.",
+      });
+      return;
+    }
+  } else if (paidAmount > 0) {
+    res.status(400).json({
+      error:
+        "Un montant déjà payé n'est possible qu'avec le statut « partiel ».",
+    });
+    return;
+  }
 
   // An itemId without a quantity (or a quantity of zero) names an article but
   // moves none of it, which would post a journal entry that silently disagrees
@@ -212,6 +225,20 @@ router.post("/transactions", async (req, res): Promise<void> => {
         return { ok: false, status: 500, error: "Insert failed" };
       }
 
+      // The advance is part of the same unit of work as the entry: a facture
+      // marked partial without its payment would read back as unpaid.
+      if (paidAmount > 0) {
+        await tx.insert(transactionPaymentsTable).values({
+          transactionId: row.id,
+          date: toIsoDate(parsed.data.date),
+          payer: parsed.data.thirdParty?.trim() || parsed.data.label,
+          amount: String(paidAmount),
+          type: parsed.data.paidMethod ?? "BANK",
+          reference: null,
+          label: null,
+        });
+      }
+
       if (movementDirection && itemId && quantity != null) {
         await tx.insert(inventoryMovementsTable).values({
           itemId,
@@ -232,7 +259,7 @@ router.post("/transactions", async (req, res): Promise<void> => {
     res.status(outcome.status).json({ error: outcome.error });
     return;
   }
-  res.status(201).json(rowToView(outcome.row));
+  res.status(201).json(rowToView(outcome.row, paidAmount));
 });
 
 router.get("/transactions/:id/payments", async (req, res): Promise<void> => {

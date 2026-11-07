@@ -31,6 +31,8 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
 
   const watchType = form.watch("type");
   const watchStatus = form.watch("status");
+  const watchPaymentMethod = form.watch("paymentMethod");
+  const watchPaidAmount = form.watch("paidAmount");
   const watchItemId = form.watch("itemId");
   const watchQty = form.watch("quantity");
 
@@ -59,6 +61,24 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
   // row while it still has an outstanding balance.
   useEffect(() => {
     if (watchStatus !== "PAID") form.setValue("paymentMethod", "CREDIT");
+  }, [watchStatus, form]);
+
+  // "À terme" means nothing has been settled up front, so PAID is not offered
+  // while the credit channel is selected. An entry that was already marked
+  // paid falls back to unpaid when the channel switches to credit.
+  useEffect(() => {
+    if (watchPaymentMethod === "CREDIT" && watchStatus === "PAID") {
+      form.setValue("status", "UNPAID", { shouldValidate: true });
+    }
+  }, [watchPaymentMethod, watchStatus, form]);
+
+  // The advance belongs to a partial entry only; leaving that status clears it
+  // so a stale amount cannot ride along with the next submission.
+  useEffect(() => {
+    if (watchStatus !== "PARTIAL") {
+      form.setValue("paidAmount", 0);
+      form.setValue("paidMethod", "BANK");
+    }
   }, [watchStatus, form]);
 
   useEffect(() => {
@@ -260,7 +280,17 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("journal.form.paymentMethod")}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Batch the fallback with the channel change so the
+                        // status trigger never points at a removed PAID item.
+                        if (value === "CREDIT" && form.getValues("status") === "PAID") {
+                          form.setValue("status", "UNPAID", { shouldValidate: true });
+                        }
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t("company.selectPlaceholder")} />
@@ -289,7 +319,9 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="PAID">{t("consts.transaction.status.PAID")}</SelectItem>
+                        {watchPaymentMethod !== "CREDIT" && (
+                          <SelectItem value="PAID">{t("consts.transaction.status.PAID")}</SelectItem>
+                        )}
                         <SelectItem value="UNPAID">{t("consts.transaction.status.UNPAID")}</SelectItem>
                         <SelectItem value="PARTIAL">{t("consts.transaction.status.PARTIAL")}</SelectItem>
                       </SelectContent>
@@ -299,6 +331,60 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                 )}
               />
             </div>
+
+            {watchStatus === "PARTIAL" && (
+              <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="paidAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("journal.form.paidAmount")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0.01"
+                            max={amountTtc}
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="paidMethod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("journal.form.paidMethod")}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value ?? "BANK"}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="CASH">{t("journal.form.methodCash")}</SelectItem>
+                            <SelectItem value="BANK">{t("journal.form.methodBank")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("journal.form.paidRemaining", {
+                    amount: formatMoney(
+                      Math.max(0, amountTtc - (Number(watchPaidAmount) || 0)),
+                    ),
+                  })}
+                </p>
+              </div>
+            )}
 
             <div className="bg-muted p-4 rounded-md grid grid-cols-2 gap-4">
               <div>

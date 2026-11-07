@@ -34,6 +34,8 @@ export default {
   "common.none": "Non spécifié",
   "zod.required": "{{field}} est requis",
   "zod.positive": "Doit être un montant positif",
+  "zod.partialPaidRequired": "Le montant déjà payé est requis pour un paiement partiel",
+  "zod.partialPaidTooHigh": "Le montant déjà payé doit être inférieur au montant TTC",
 
   // --------------------------------------------------------------- Months
   "months.january": "Janvier",
@@ -437,6 +439,9 @@ export default {
   "journal.form.methodCash": "Espèces",
   "journal.form.methodCredit": "Crédit / À terme",
   "journal.form.status": "Statut du paiement",
+  "journal.form.paidAmount": "Montant déjà payé (DA)",
+  "journal.form.paidMethod": "Mode de paiement (acompte)",
+  "journal.form.paidRemaining": "Reste à payer après cet acompte : {{amount}}",
   "journal.form.tvaAmount": "Montant TVA",
   "journal.form.amountTtc": "Montant TTC",
   "journal.form.submitting": "Enregistrement en cours...",
@@ -470,6 +475,7 @@ export default {
   "journal.payment.fullTitle": "Payer entièrement la facture",
   "journal.payment.partialTitle": "Enregistrer un paiement partiel",
   "journal.payment.detailsTitle": "Historique des paiements",
+  "journal.payment.date": "Date",
   "journal.payment.remaining": "Reste à payer : {{amount}}",
   "journal.payment.payer": "Payeur",
   "journal.payment.amount": "Montant",

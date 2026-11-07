@@ -416,6 +416,18 @@ export const TransactionInputStatus = {
   PARTIAL: "PARTIAL",
 } as const;
 
+/**
+ * Channel the initial partial payment went through. Defaults to BANK.
+ */
+export type TransactionInputPaidMethod =
+  | (typeof TransactionInputPaidMethod)[keyof typeof TransactionInputPaidMethod]
+  | null;
+
+export const TransactionInputPaidMethod = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
 export interface TransactionInput {
   date: string;
   type: TransactionInputType;
@@ -430,6 +442,13 @@ export interface TransactionInput {
   tvaRate: number;
   paymentMethod: TransactionInputPaymentMethod;
   status: TransactionInputStatus;
+  /**
+   * Amount already settled when the entry is created, recorded as a payment row against the facture. Only valid with status PARTIAL, where it must be greater than zero and strictly below amountTtc.
+   * @minimum 0
+   */
+  paidAmount?: number;
+  /** Channel the initial partial payment went through. Defaults to BANK. */
+  paidMethod?: TransactionInputPaidMethod;
   thirdParty?: string | null;
   category?: string | null;
   /** Optional stock article. A SALE naming one relieves inventory at the CUMP and records the cost; a PURCHASE naming one feeds it at amountHt / quantity. Entries without an itemId behave as before. */

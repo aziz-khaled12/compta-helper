@@ -35,6 +35,8 @@ export default {
   "common.none": "غير محدد",
   "zod.required": "{{field}} مطلوب",
   "zod.positive": "يجب أن يكون مبلغاً موجباً",
+  "zod.partialPaidRequired": "المبلغ المدفوع مسبقاً مطلوب للدفع الجزئي",
+  "zod.partialPaidTooHigh": "يجب أن يكون المبلغ المدفوع مسبقاً أقل من المبلغ مع الرسوم",
 
   // --------------------------------------------------------------- Months
   "months.january": "جانفي",
@@ -431,6 +433,9 @@ export default {
   "journal.form.methodCash": "نقداً",
   "journal.form.methodCredit": "بالأجل / آجل",
   "journal.form.status": "حالة الدفع",
+  "journal.form.paidAmount": "المبلغ المدفوع مسبقاً (دج)",
+  "journal.form.paidMethod": "طريقة دفع الدفعة المقدمة",
+  "journal.form.paidRemaining": "المتبقي بعد هذه الدفعة: {{amount}}",
   "journal.form.tvaAmount": "مبلغ الرسم على القيمة المضافة",
   "journal.form.amountTtc": "المبلغ مع الرسوم",
   "journal.form.submitting": "جارٍ التسجيل...",
@@ -464,6 +469,7 @@ export default {
   "journal.payment.fullTitle": "دفع الفاتورة بالكامل",
   "journal.payment.partialTitle": "تسجيل دفعة جزئية",
   "journal.payment.detailsTitle": "سجل الدفعات",
+  "journal.payment.date": "التاريخ",
   "journal.payment.remaining": "المبلغ المتبقي: {{amount}}",
   "journal.payment.payer": "الدافع",
   "journal.payment.amount": "المبلغ",

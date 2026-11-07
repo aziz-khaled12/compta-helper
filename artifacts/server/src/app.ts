@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
@@ -77,5 +77,31 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+// Last resort for anything a route throws or rejects with. Express's default
+// handler answers with an HTML page and prints the stack to stderr, so a 500
+// reaches the client as "Internal Server Error" with the actual cause only in
+// the host's log — which is how a missing table looked like a broken endpoint
+// for a day. The JSON body keeps the reason on the response (the exact message
+// outside production, where it is a debugging aid rather than a leak), and the
+// log line keeps the stack next to the request id.
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  logger.error(
+    { err, method: req.method, url: req.originalUrl, requestId: req.id },
+    "Unhandled route error",
+  );
+
+  // Headers are already on the wire: nothing can be rewritten, so hand the
+  // error back to Express to close the connection properly.
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  const message = err instanceof Error ? err.message : String(err);
+  res.status(500).json({
+    error: isProduction ? "Erreur interne du serveur" : message,
+  });
+});
 
 export default app;

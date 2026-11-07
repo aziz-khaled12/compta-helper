@@ -337,6 +337,8 @@ export const createTransactionBodyAmountHtMin = 0;
 export const createTransactionBodyTvaRateMin = 0;
 export const createTransactionBodyTvaRateMax = 100;
 
+export const createTransactionBodyPaidAmountMin = 0;
+
 export const createTransactionBodyQuantityMin = 0;
 
 export const CreateTransactionBody = zod.object({
@@ -350,6 +352,19 @@ export const CreateTransactionBody = zod.object({
     .max(createTransactionBodyTvaRateMax),
   paymentMethod: zod.enum(["CASH", "BANK", "CREDIT"]),
   status: zod.enum(["PAID", "UNPAID", "PARTIAL"]),
+  paidAmount: zod
+    .number()
+    .min(createTransactionBodyPaidAmountMin)
+    .optional()
+    .describe(
+      "Amount already settled when the entry is created, recorded as a payment row against the facture. Only valid with status PARTIAL, where it must be greater than zero and strictly below amountTtc.",
+    ),
+  paidMethod: zod
+    .enum(["CASH", "BANK"])
+    .nullish()
+    .describe(
+      "Channel the initial partial payment went through. Defaults to BANK.",
+    ),
   thirdParty: zod.string().nullish(),
   category: zod.string().nullish(),
   itemId: zod
