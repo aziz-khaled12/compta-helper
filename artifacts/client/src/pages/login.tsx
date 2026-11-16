@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -114,13 +115,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--sidebar-background))] to-background flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo / Brand */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold shadow-lg">
-            D
-          </div>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_15%_10%,hsl(var(--landing-cyan)/.16),transparent_34%),hsl(var(--background))] flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md space-y-6">
+          {/* Logo / Brand */}
+          <div className="text-center space-y-3">
+          <Link href="/" className="inline-flex items-center justify-center">
+            <img src="/logo.jpg" alt={t("landing.brand")} className="h-20 w-auto rounded-xl object-contain mix-blend-multiply" />
+          </Link>
           <h1 className="text-3xl font-bold tracking-tight">{t("auth.brand")}</h1>
           <p className="text-muted-foreground text-sm">
             {t("auth.tagline")}
@@ -136,7 +137,7 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             <Tabs
-              defaultValue="login"
+              defaultValue={new URLSearchParams(window.location.search).get("register") === "true" ? "register" : "login"}
               onValueChange={() => setFormError(null)}
             >
               <TabsList className="grid w-full grid-cols-2">

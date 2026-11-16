@@ -28,13 +28,11 @@ export default function Onboarding() {
   const state = useOnboardingState();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--sidebar-background))] to-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_15%_10%,hsl(var(--landing-cyan)/.14),transparent_34%),hsl(var(--background))] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8 space-y-1">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground text-lg font-bold mb-3">
-            D
-          </div>
+          <img src="/logo.jpg" alt={t("landing.brand")} className="mx-auto mb-3 h-14 w-auto rounded-xl object-contain" />
           <h1 className="text-2xl font-bold">{t("onboarding.heading")}</h1>
           <p className="text-muted-foreground text-sm">
             {t("onboarding.subheading")}

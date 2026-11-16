@@ -66,8 +66,15 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE - Deep Teal & Ochre/Terracotta (North African Vibe) */
+/* LIGHT MODE - Compta Helpe navy, cyan and gold brand system */
 :root {
+  --landing-navy: 220 76% 24%;
+  --landing-navy-light: 220 70% 32%;
+  --landing-cyan: 191 77% 43%;
+  --landing-cyan-dark: 191 80% 35%;
+  --landing-gold: 41 88% 58%;
+  --landing-gold-light: 41 92% 68%;
+  --landing-gold-dark: 38 77% 38%;
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
 
@@ -87,45 +94,45 @@
   --card-border: 40 20% 90%;
 
   /* Deep Teal sidebar */
-  --sidebar: 190 40% 18%;
-  --sidebar-foreground: 190 20% 90%;
-  --sidebar-border: 190 40% 15%;
-  --sidebar-primary: 190 50% 30%;
+  --sidebar: 220 76% 24%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 220 70% 19%;
+  --sidebar-primary: 191 77% 43%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 190 30% 25%;
+  --sidebar-accent: 220 65% 31%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 190 50% 40%;
+  --sidebar-ring: 191 77% 43%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 220 20% 15%;
   --popover-border: 40 20% 90%;
 
   /* Deep Teal */
-  --primary: 190 50% 30%;
+  --primary: 220 76% 24%;
   --primary-foreground: 0 0% 100%;
 
   /* Ochre/Terracotta */
-  --secondary: 25 70% 55%;
+  --secondary: 41 88% 58%;
   --secondary-foreground: 0 0% 100%;
 
   --muted: 40 20% 92%;
   --muted-foreground: 40 10% 45%;
 
   --accent: 40 30% 90%;
-  --accent-foreground: 190 50% 30%;
+  --accent-foreground: 220 76% 24%;
 
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
 
   --input: 40 20% 85%;
-  --ring: 190 50% 30%;
+  --ring: 191 77% 43%;
 
   /* Warm/Earth charts */
-  --chart-1: 190 50% 30%; /* Teal */
-  --chart-2: 25 70% 55%;  /* Ochre */
-  --chart-3: 10 60% 45%;  /* Rust */
-  --chart-4: 40 50% 45%;  /* Olive/Gold */
-  --chart-5: 220 30% 40%; /* Deep Blue */
+  --chart-1: 220 76% 24%; /* Navy */
+  --chart-2: 191 77% 43%; /* Cyan */
+  --chart-3: 41 88% 58%;  /* Gold */
+  --chart-4: 191 65% 58%;
+  --chart-5: 220 45% 45%;
 
   --app-font-sans: 'Plus Jakarta Sans', 'Inter', 'Noto Sans Arabic', sans-serif;
   --app-font-serif: 'Playfair Display', serif;

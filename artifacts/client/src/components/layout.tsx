@@ -156,9 +156,10 @@ export function Layout({ children }: LayoutProps) {
       <aside className="hidden md:flex flex-col w-64 border-r border-sidebar-border bg-sidebar shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border shrink-0">
           <div className="flex flex-col">
-            <span className="font-bold text-sidebar-foreground tracking-tight leading-none text-lg">
-              {company?.name || "DJERDJERA"}
-            </span>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.jpg" alt={t("landing.brand")} className="h-9 w-auto rounded-md object-contain" />
+              <span className="sr-only">{company?.name || t("landing.brand")}</span>
+            </div>
             <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-wider mt-1">
               {t("layout.accounting")}
             </span>
@@ -214,9 +215,7 @@ onClick={() => void logout()}
                 className="w-64 p-0 bg-sidebar border-sidebar-border"
               >
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-                  <span className="font-bold text-sidebar-foreground tracking-tight text-lg">
-                    {company?.name || "DJERDJERA"}
-                  </span>
+                    <img src="/logo.jpg" alt={t("landing.brand")} className="h-9 w-auto rounded-md object-contain" />
                 </div>
                 <div className="p-3">
                   <NavLinks />
@@ -224,7 +223,7 @@ onClick={() => void logout()}
               </SheetContent>
             </Sheet>
             <div className="font-semibold text-foreground text-sm">
-              {company?.name || "DJERDJERA Comptable"}
+              {company?.name || t("landing.brand")}
             </div>
           </div>
 

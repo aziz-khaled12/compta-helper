@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Toaster } from "@/components/ui/toaster";
@@ -23,6 +23,7 @@ import Reports from "@/pages/reports";
 import Analyse from "@/pages/analyse";
 import Legal from "@/pages/legal";
 import Login from "@/pages/login";
+import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
 import Assets from "./pages/resources";
 
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 
 function AppRouter() {
   const { t } = useTranslation();
+  const [location] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
   const { data: company, isLoading: companyLoading } = useGetCompany({
     // The generated hook's `query` type requires the key even though it defaults
@@ -53,7 +55,7 @@ function AppRouter() {
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    return location === "/login" ? <Login /> : <Landing />;
   }
 
   if (!company) {
