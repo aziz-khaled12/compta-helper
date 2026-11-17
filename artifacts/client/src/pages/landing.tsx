@@ -1,13 +1,13 @@
-import { ArrowDown, ArrowRight, Languages, Menu } from "lucide-react";
+import { ArrowRight, Languages, Menu } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import i18n, { LANGUAGES, type AppLanguage } from "@/i18n";
 import { Button } from "@/components/ui/button";
 
+const FEATURE_INDEXES = [0, 1, 2, 3, 4, 5, 6];
+
 export default function Landing() {
   const { t } = useTranslation();
-  const isArabic = (i18n.resolvedLanguage ?? i18n.language).startsWith("ar");
-  const DirectionArrow = isArabic ? ArrowRight : ArrowRight;
 
   const toggleLanguage = () => {
     const current = i18n.resolvedLanguage ?? i18n.language;
@@ -26,8 +26,7 @@ export default function Landing() {
         </Link>
         <nav className="hidden items-center gap-7 text-[12px] font-medium text-[#53627a] md:flex">
           <a href="#features" className="transition-colors hover:text-[#087fbb]">{t("landing.nav.features")}</a>
-          <a href="#workflow" className="transition-colors hover:text-[#087fbb]">{t("landing.nav.workflow")}</a>
-          <a href="#security" className="transition-colors hover:text-[#087fbb]">{t("landing.nav.security")}</a>
+          <a href="#contact" className="transition-colors hover:text-[#087fbb]">{t("landing.nav.contact")}</a>
         </nav>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="hidden h-8 w-8 sm:inline-flex" title={t("landing.language")} onClick={toggleLanguage}>
@@ -46,13 +45,14 @@ export default function Landing() {
             <span className="h-1.5 w-1.5 rounded-full bg-[#f1b93e]" />
             {t("landing.eyebrow")}
           </div>
-          <h1 className="max-w-[760px] text-[clamp(2.5rem,6vw,4.7rem)] font-bold leading-[.98] tracking-[-0.065em] text-[#14284f]">
+          <h1 className="max-w-[820px] text-[clamp(2.4rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.04em] text-[#14284f]">
             {t("landing.titleStart")}<br /><span className="text-[#087fbb]">{t("landing.titleAccent")}</span>
           </h1>
-          <p className="mt-6 max-w-[570px] text-[15px] leading-7 text-[#687a91] sm:text-base">{t("landing.description")}</p>
+          <p className="mt-6 text-base font-semibold text-[#34506b] sm:text-lg">{t("landing.heroSubtitle")}</p>
+          <p className="mt-3 max-w-[570px] text-[15px] leading-7 text-[#687a91] sm:text-base">{t("landing.description")}</p>
           <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row">
-            <Link href="/login?register=true"><Button size="lg" className="h-11 rounded-md bg-[#087fbb] px-6 text-sm text-white shadow-[0_10px_22px_-12px_#087fbb] hover:bg-[#066c9f]">{t("landing.primaryCta")}<DirectionArrow className="h-4 w-4" /></Button></Link>
-            <a href="#features"><Button size="lg" variant="ghost" className="h-11 px-4 text-sm text-[#34506b]">{t("landing.secondaryCta")}<ArrowDown className="h-4 w-4" /></Button></a>
+            <Link href="/login?register=true"><Button size="lg" className="h-11 rounded-md bg-[#087fbb] px-6 text-sm text-white shadow-[0_10px_22px_-12px_#087fbb] hover:bg-[#066c9f]">{t("landing.primaryCta")}<ArrowRight className="h-4 w-4 rtl:rotate-180" /></Button></Link>
+            <Link href="/login"><Button size="lg" variant="ghost" className="h-11 px-4 text-sm text-[#34506b]">{t("landing.secondaryCta")}</Button></Link>
           </div>
           <p className="mt-4 text-[10px] text-[#8a9caf]">{t("landing.heroMeta")}</p>
         </div>
@@ -66,46 +66,68 @@ export default function Landing() {
       </section>
 
       <section id="features" className="border-y border-[#dfeaf5] bg-white px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
-        <div className="mx-auto grid max-w-[1080px] gap-12 lg:grid-cols-[.7fr_1.3fr] lg:gap-24">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#087fbb]">{t("landing.featuresEyebrow")}</p>
-            <h2 className="mt-4 max-w-sm text-4xl font-bold leading-[1.02] tracking-[-0.055em] text-[#14284f] sm:text-5xl">{t("landing.featuresTitle")}</h2>
-            <p className="mt-5 max-w-sm text-[15px] leading-7 text-[#687a91]">{t("landing.workflowDescription")}</p>
+        <div className="mx-auto max-w-[1080px]">
+          <div className="max-w-3xl">
+            <h2 className="text-[clamp(2rem,4.4vw,3.4rem)] font-bold leading-[1.06] tracking-[-0.045em] text-[#14284f]">{t("landing.featuresTitle")}</h2>
+            <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#687a91] sm:text-base">{t("landing.featuresSubtitle")}</p>
           </div>
-          <div className="grid gap-x-10 gap-y-9 sm:grid-cols-2">
-            {[0, 1, 2, 3].map((index) => (
-              <article key={index} className="border-t border-[#dfeaf5] pt-5">
-                <span className="text-xs font-bold text-[#f1b93e]">0{index + 1}</span>
-                <h3 className="mt-4 text-lg font-bold tracking-[-0.02em] text-[#14284f]">{t(`landing.feature.${index}.title`)}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#687a91]">{t(`landing.feature.${index}.description`)}</p>
-              </article>
-            ))}
+          <div className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
+            {FEATURE_INDEXES.map((index) => {
+              const isClosingFeature = index === FEATURE_INDEXES.length - 1;
+              return (
+                <article
+                  key={index}
+                  className={
+                    isClosingFeature
+                      ? "rounded-xl border border-[#d9ecf7] bg-[#f4fbff] p-6 sm:col-span-2 lg:col-span-3"
+                      : "border-t border-[#dfeaf5] pt-5"
+                  }
+                >
+                  <div className={isClosingFeature ? "lg:flex lg:items-center lg:justify-between lg:gap-10" : undefined}>
+                    <div>
+                      <span className="text-xs font-bold text-[#f1b93e]">0{index + 1}</span>
+                      <h3 className={`mt-4 text-lg font-bold tracking-[-0.02em] text-[#14284f]${isClosingFeature ? " lg:mt-2" : ""}`}>{t(`landing.feature.${index}.title`)}</h3>
+                    </div>
+                    <p className={`mt-2 max-w-md text-sm leading-6 text-[#687a91]${isClosingFeature ? " lg:mt-0 lg:max-w-lg" : ""}`}>{t(`landing.feature.${index}.description`)}</p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section id="workflow" className="bg-[#14284f] px-5 py-20 text-white sm:px-8 lg:px-10 lg:py-28">
-        <div className="mx-auto grid max-w-[1080px] gap-14 lg:grid-cols-[.85fr_1.15fr] lg:gap-24">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#f1b93e]">{t("landing.workflowEyebrow")}</p>
-            <h2 className="mt-4 max-w-md text-4xl font-bold leading-[1.02] tracking-[-0.055em] sm:text-5xl">{t("landing.workflowTitle")}</h2>
-          </div>
-          <div>
-            <p className="max-w-lg text-base leading-8 text-white/65">{t("landing.workflowDescription")}</p>
-            <div className="mt-10 divide-y divide-white/15 border-y border-white/15">
-              {[0, 1, 2].map((index) => <div key={index} className="grid gap-3 py-6 sm:grid-cols-[56px_1fr]"><span className="text-sm font-bold text-[#f1b93e]">0{index + 1}</span><div><h3 className="text-lg font-semibold">{t(`landing.workflow.${index}.title`)}</h3><p className="mt-2 max-w-md text-sm leading-6 text-white/60">{t(`landing.workflow.${index}.description`)}</p></div></div>)}
+      <section className="bg-[#14284f] px-5 py-14 sm:px-8 lg:px-10 lg:py-16">
+        <div className="mx-auto flex max-w-[1080px] items-center gap-4 sm:gap-6">
+          <span className="h-10 w-1.5 shrink-0 rounded-full bg-[#f1b93e]" />
+          <p className="text-[clamp(1.4rem,3vw,2.1rem)] font-bold leading-tight tracking-[-0.02em] text-white">{t("landing.featuresClosing")}</p>
+        </div>
+      </section>
+
+      <section id="contact" className="bg-[#10a9d1] px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+        <div className="mx-auto grid max-w-[1080px] items-end gap-10 lg:grid-cols-[1.3fr_.7fr]">
+          <h2 className="max-w-2xl text-4xl font-bold leading-[1.02] tracking-[-0.05em] text-[#14284f] sm:text-5xl lg:text-6xl">{t("landing.ctaTitle")}</h2>
+          <div><p className="max-w-sm text-base leading-7 text-[#14284f]/75">{t("landing.ctaDescription")}</p><Link href="/login?register=true" className="mt-7 inline-flex"><Button size="lg" className="h-11 bg-[#14284f] text-sm text-white hover:bg-[#203c70]">{t("landing.primaryCta")}<ArrowRight className="h-4 w-4 rtl:rotate-180" /></Button></Link></div>
+        </div>
+      </section>
+
+      <footer className="border-t border-[#dfeaf5] bg-[#f7fbff] px-5 py-8 text-xs text-[#687a91] sm:px-8 lg:px-10">
+        <div className="mx-auto flex max-w-[1080px] flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.jpg" alt="" className="h-7 w-auto mix-blend-multiply" />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[13px] font-bold text-[#14284f]">{t("landing.brand")}</span>
+              <span>{t("landing.footer")}</span>
             </div>
           </div>
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 font-medium text-[#53627a]">
+            <Link href="/login" className="transition-colors hover:text-[#087fbb]">{t("landing.login")}</Link>
+            <Link href="/login?register=true" className="transition-colors hover:text-[#087fbb]">{t("landing.register")}</Link>
+            <a href="#contact" className="transition-colors hover:text-[#087fbb]">{t("landing.contact")}</a>
+          </nav>
+          <span className="text-[#8a9caf]">{t("landing.copyright")}</span>
         </div>
-      </section>
-
-      <section id="security" className="bg-[#10a9d1] px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
-        <div className="mx-auto grid max-w-[1080px] items-end gap-10 lg:grid-cols-[1.3fr_.7fr]">
-          <h2 className="max-w-2xl text-4xl font-bold leading-[.98] tracking-[-0.06em] text-[#14284f] sm:text-6xl">{t("landing.ctaTitle")}</h2>
-          <div><p className="max-w-sm text-base leading-7 text-[#14284f]/75">{t("landing.ctaDescription")}</p><Link href="/login?register=true" className="mt-7 inline-flex"><Button size="lg" className="h-11 bg-[#14284f] text-sm text-white hover:bg-[#203c70]">{t("landing.primaryCta")}<ArrowRight className="h-4 w-4" /></Button></Link></div>
-        </div>
-      </section>
-      <footer className="mx-auto flex max-w-[1080px] flex-col gap-2 px-5 py-7 text-xs text-[#687a91] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10"><span className="font-bold text-[#14284f]">{t("landing.brand")}</span><span>{t("landing.footer")}</span></footer>
+      </footer>
     </main>
   );
 }
