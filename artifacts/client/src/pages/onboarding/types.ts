@@ -23,6 +23,9 @@ export const assetSchema = z.object({
   purchaseDate: z.string().min(10),
   lifeYears: z.coerce.number().int().positive(),
   residualValue: z.coerce.number().min(0),
+  // Defaulted so a draft saved before this field existed still parses — same
+  // reasoning as `debts` below; no version bump needed.
+  paymentAccount: z.enum(["CASH", "BANK"]).default("CASH"),
 });
 
 export const inventorySchema = z.object({

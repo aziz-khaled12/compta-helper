@@ -19,11 +19,14 @@ export function AchatsVentesTable({
   return (
     <ReportCard title={title}>
       <table className="w-full text-sm">
-        <THead cols={[
-          t("reports.col.date"), t("reports.col.label"), t("reports.col.tiers"),
-          t("reports.col.ref"), t("reports.col.amountHt"), tvaLabel,
-          t("reports.col.amountTtc"), t("reports.col.payments"), t("reports.col.remaining"),
-        ]} />
+        <THead
+          cols={[
+            t("reports.col.date"), t("reports.col.label"), t("reports.col.tiers"),
+            t("reports.col.ref"), t("reports.col.amountHt"), tvaLabel,
+            t("reports.col.amountTtc"), t("reports.col.payments"), t("reports.col.remaining"),
+          ]}
+          numeric={[4, 5, 6, 7, 8]}
+        />
         <tbody>
           {data.data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">

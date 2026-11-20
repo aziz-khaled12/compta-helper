@@ -1,8 +1,9 @@
 import { jsPDF } from "jspdf";
 import { autoTable, type RowInput, type Styles, type UserOptions } from "jspdf-autotable";
+import { exportFileBase } from "./file-name";
 
 /**
- * PDF rendering for the report exports.
+ * PDF rendering for the tabular exports — the ten reports and the journal.
  *
  * jsPDF's built-in Helvetica is a single-byte (WinAnsi) font: it has no glyph
  * for the narrow no-break space `fr-DZ` uses to group thousands, so a raw
@@ -12,9 +13,9 @@ import { autoTable, type RowInput, type Styles, type UserOptions } from "jspdf-a
  * spaces to the *non-breaking* space the font does have (so an amount never
  * wraps across two lines) and drops zero-width characters.
  *
- * The layout is shared by all ten reports: identity block, period band, table
- * with a right-aligned numeric side, a head repeated on every page and a page
- * footer. Amounts are printed exactly (never the compacted `12,35 M` form)
+ * The layout is shared by every tabular export: identity block, period band, a
+ * table with a right-aligned numeric side, a head repeated on every page and a
+ * page footer. Amounts are printed exactly (never the compacted `12,35 M` form)
  * because the PDF is handed to an accountant; the currency is stated once,
  * above the table, instead of being repeated in every cell.
  */
@@ -43,7 +44,11 @@ export function pdfText(value: string | number | null | undefined): string {
   return String(value ?? "")
     .replace(SPACE_CHARS, "\u00A0")
     .replace(ZERO_WIDTH, "")
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+    // Helvetica has no Arabic/CJK glyphs. Replacing unsupported characters is
+    // preferable to jsPDF's byte-level mojibake (for example `نقداً` becoming
+    // `Kɓ...`). The exported document is deliberately French.
+    .replace(/[^\x20-\x7E\xA0-\xFF\u0152\u0153\u0178\u2013\u2014\u2018\u2019\u201C\u201D\u2022]/g, "?");
 }
 
 /** Exact, two decimals, no currency — `1 250 000,00` with a non-breaking space. */
@@ -56,9 +61,9 @@ export function pdfAmount(value: number): string {
   );
 }
 
-/** `2026-01-12` -> `12/01/2026`; anything else is returned untouched. */
+/** `2026-01-12` (or an ISO timestamp) -> `12/01/2026`. */
 export function pdfDate(value: string): string {
-  const match = ISO_DATE.exec(value);
+  const match = ISO_DATE.exec(value.slice(0, 10));
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
 }
 
@@ -89,6 +94,130 @@ export type PdfReportInput = {
   /** Body row indices that introduce a group (the G50's month headings). */
   groupRows?: number[];
 };
+
+export type InvoicePdfInput = {
+  companyName: string;
+  companyAddress?: string | null;
+  companyNif?: string | null;
+  companyAi?: string | null;
+  invoiceNumber: string;
+  date: string;
+  customer: string;
+  /** Internal transaction type, kept as a code so Arabic UI text never enters the PDF. */
+  kind: string;
+  label: string;
+  unit?: string | null;
+  quantity: number;
+  amountHt: number;
+  tvaRate: number;
+  tvaAmount: number;
+  amountTtc: number;
+  /** Internal payment/status codes, rendered with the PDF's French vocabulary. */
+  paymentMethod: string;
+  status: string;
+};
+
+/** Build one portrait, invoice-shaped PDF for an individual journal facture. */
+export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 16;
+  const right = pageW - margin;
+  const amount = (value: number) => `${pdfAmount(value)} DA`;
+  const kindLabel: Record<string, string> = {
+    SALE: "Client",
+    PURCHASE: "Fournisseur",
+  };
+  const paymentLabel: Record<string, string> = {
+    CASH: "Espèces",
+    BANK: "Banque",
+    CREDIT: "Crédit",
+  };
+  const statusLabel: Record<string, string> = {
+    PAID: "Payé",
+    UNPAID: "Impayé",
+    PARTIAL: "Partiel",
+  };
+
+  doc.setProperties({
+    title: `Facture ${input.invoiceNumber}`,
+    subject: `${input.companyName} — Facture`,
+    author: input.companyName,
+    creator: "Djerdjera",
+  });
+  doc.setTextColor(...INK);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(pdfText(input.companyName), margin, 22);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  let sellerY = 28;
+  for (const line of [
+    input.companyAddress,
+    input.companyNif ? `NIF : ${input.companyNif}` : null,
+    input.companyAi ? `Article d'imposition : ${input.companyAi}` : null,
+  ].filter(Boolean)) {
+    doc.text(pdfText(line), margin, sellerY);
+    sellerY += 5;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(19);
+  doc.text("FACTURE", right, 22, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(pdfText(`N° facture : ${input.invoiceNumber}`), right, 29, { align: "right" });
+  doc.text(pdfText(`Date : ${pdfDate(input.date)}`), right, 35, { align: "right" });
+
+  const customerTop = Math.max(sellerY + 5, 47);
+  doc.setDrawColor(...RULE);
+  doc.line(margin, customerTop, right, customerTop);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("CLIENT / FOURNISSEUR", margin, customerTop + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(pdfText(input.customer), margin, customerTop + 15);
+  doc.setFontSize(9);
+  doc.text(pdfText(kindLabel[input.kind] ?? input.kind), margin, customerTop + 21);
+  doc.line(margin, customerTop + 28, right, customerTop + 28);
+
+  autoTable(doc, {
+    startY: customerTop + 35,
+    margin: { left: margin, right: margin },
+    head: [["Désignation", "Unité", "Qté", "P.U. HT", "Montant HT"]],
+    body: [[
+      pdfText(input.label),
+      pdfText(input.unit || "—"),
+      pdfText(input.quantity),
+      amount(input.quantity ? input.amountHt / input.quantity : input.amountHt),
+      amount(input.amountHt),
+    ]],
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 9, textColor: INK, cellPadding: 3, lineColor: RULE, lineWidth: 0.2 },
+    headStyles: { fillColor: BAND, textColor: INK, fontStyle: "bold" },
+    columnStyles: { 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+  });
+
+  const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? customerTop + 65;
+  const totalsY = finalY + 14;
+  doc.setFontSize(10);
+  doc.text(pdfText(`Mode de paiement : ${paymentLabel[input.paymentMethod] ?? input.paymentMethod}`), margin, totalsY);
+  doc.text(pdfText(`Statut : ${statusLabel[input.status] ?? input.status}`), margin, totalsY + 7);
+  doc.setFont("helvetica", "normal");
+  doc.text("Total HT", right - 52, totalsY, { align: "right" });
+  doc.text(amount(input.amountHt), right, totalsY, { align: "right" });
+  doc.text(`Total TVA (${pdfText(input.tvaRate)}%)`, right - 52, totalsY + 7, { align: "right" });
+  doc.text(amount(input.tvaAmount), right, totalsY + 7, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  doc.text("Total TTC", right - 52, totalsY + 16, { align: "right" });
+  doc.text(amount(input.amountTtc), right, totalsY + 16, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text("Document généré par Compta Helpe", margin, doc.internal.pageSize.getHeight() - 14);
+  return doc;
+}
 
 /** Build (but do not save) the PDF for one report. */
 export function buildReportPdf({
@@ -381,12 +510,5 @@ function drawFooters(
 
 /** Filesystem-safe name: `1 - Caisse (Livre de Caisse)_Janvier 2026 – ….pdf`. */
 export function pdfFileName(reportLabel: string, period: string): string {
-  const clean = (value: string) =>
-    value
-      .replace(/[–—]/g, "-")
-      .replace(/[\\/:*?"<>|]+/g, "-")
-      .replace(/\s+/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^[-_]+|[-_]+$/g, "");
-  return `${clean(pdfText(reportLabel))}_${clean(pdfText(period))}.pdf`;
+  return `${exportFileBase(pdfText(reportLabel), pdfText(period))}.pdf`;
 }

@@ -7,7 +7,7 @@ import type {
   Finding,
   InventoryItemRow,
 } from "./types";
-import type { AssetRow, MvRow, PayrollRow, TxRow } from "@/lib/ledger";
+import type { AssetRow, FundingEntry, MvRow, PayrollRow, SettlementRow, TxRow } from "@/lib/ledger";
 
 /**
  * The deterministic half of the assistant: the figures and the observations,
@@ -27,6 +27,8 @@ import type { AssetRow, MvRow, PayrollRow, TxRow } from "@/lib/ledger";
 /** The rows analysis reads, in the shape the pages already hold them. */
 export interface AnalysisSource {
   txns: TxRow[];
+  settlements: SettlementRow[];
+  funding: FundingEntry[];
   mvs: MvRow[];
   items: InventoryItemRow[];
   assets: AssetRow[];
@@ -46,7 +48,7 @@ export interface AnalysisResult {
 }
 
 export function useAnalysis(source: AnalysisSource, enabled: boolean): AnalysisResult {
-  const { txns, mvs, items, assets, payrolls, company, from, to, periodRef } = source;
+  const { txns, settlements, funding, mvs, items, assets, payrolls, company, from, to, periodRef } = source;
 
   // The clock, frozen at mount.
   //
@@ -58,8 +60,8 @@ export function useAnalysis(source: AnalysisSource, enabled: boolean): AnalysisR
   const asOf = useMemo(() => new Date(), []);
 
   const input = useMemo<AnalyticsInput>(
-    () => ({ txns, mvs, items, assets, payrolls, company, from, to, periodRef, asOf }),
-    [txns, mvs, items, assets, payrolls, company, from, to, periodRef, asOf],
+    () => ({ txns, settlements, funding, mvs, items, assets, payrolls, company, from, to, periodRef, asOf }),
+    [txns, settlements, funding, mvs, items, assets, payrolls, company, from, to, periodRef, asOf],
   );
 
   const kpi = useMemo(() => computeKpis(input), [input]);

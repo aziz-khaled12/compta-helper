@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   useGetCompany,
   useListTransactions,
+  useListSettlements,
   useListInventoryItems,
   useListInventoryMovements,
   useListAssets,
@@ -23,7 +24,7 @@ import {
   IFU_CEILING,
   IFU_RATES,
 } from "@/lib/taxRegime";
-import { exportPDF, exportExcel } from "./lib/export";
+import { exportPDF, exportExcel } from "@/lib/export";
 import { ReportControls } from "./components/ReportControls";
 import { ReportView } from "./components/ReportView";
 import { InsightsSummaryCard } from "./components/InsightsSummaryCard";
@@ -34,13 +35,14 @@ export default function Reports() {
   const filters = useReportFilters();
   const { data: company } = useGetCompany();
   const { data: txns = [], isLoading: loadingTxns } = useListTransactions();
+  const { data: settlements = [], isLoading: loadingSettlements } = useListSettlements();
   const { data: mvs = [], isLoading: loadingMvs } = useListInventoryMovements();
   const { data: items = [] } = useListInventoryItems();
   const { data: assets = [], isLoading: loadingAssets } = useListAssets();
   const { data: payrolls = [], isLoading: loadingPayrolls } = useListPayrolls();
   const { data: funding = [] } = useListFunding();
 
-  const isLoading = loadingTxns || loadingMvs || loadingAssets || loadingPayrolls;
+  const isLoading = loadingTxns || loadingMvs || loadingAssets || loadingPayrolls || loadingSettlements;
 
   const nameById = useMemo(() => new Map(items.map((i) => [i.id, i.name])), [items]);
   const mvsWithNames = useMemo(() => mvs.map((m) => ({ ...m, itemName: nameById.get(m.itemId) || m.itemId })), [mvs, nameById]);
@@ -80,19 +82,19 @@ export default function Reports() {
   // Computations
   const computedData = useMemo(() => {
     switch (filters.reportId) {
-      case "caisse": return computeCaisseOrBanque(txns as any, funding as any, from, to, "CASH");
-      case "banque": return computeCaisseOrBanque(txns as any, funding as any, from, to, "BANK");
+      case "caisse": return computeCaisseOrBanque(settlements as any, funding as any, assets as any, from, to, "CASH");
+      case "banque": return computeCaisseOrBanque(settlements as any, funding as any, assets as any, from, to, "BANK");
       case "stocks": return computeStocks(mvsWithNames as any, from, to);
       case "achats": return computeAchatsOrVentes(txns as any, from, to, "PURCHASE");
       case "ventes": return computeAchatsOrVentes(txns as any, from, to, "SALE");
       case "charges": return computeCharges(txns as any, payrolls as any, assets as any, from, to);
       case "equipements": return computeEquipements(assets as any);
-      case "bilan": return computeBilan(txns as any, mvsWithNames as any, assets as any, payrolls as any, funding as any, from, to);
+      case "bilan": return computeBilan(txns as any, mvsWithNames as any, assets as any, payrolls as any, funding as any, settlements as any, from, to);
       case "g50": return computeG50(txns as any, payrolls as any, from, to);
       case "g12": return computeG12(txns as any, from, to);
       default: return null;
     }
-  }, [filters.reportId, txns, mvsWithNames, assets, payrolls, funding, from, to]);
+  }, [filters.reportId, txns, settlements, mvsWithNames, assets, payrolls, funding, from, to]);
 
   // The summary card reads the same rows the reports are built from — it is a
   // second reading of one dataset, not a second dataset. It sits outside the
@@ -105,6 +107,8 @@ export default function Reports() {
   const { findings } = useAnalysis(
     {
       txns: txns as any,
+      settlements: settlements as any,
+      funding: funding as any,
       mvs: mvsWithNames as any,
       items: items as any,
       assets: assets as any,

@@ -15,6 +15,7 @@ import {
   getListDebtsQueryKey,
   getListTransactionsQueryKey,
   getListTransactionPaymentsQueryKey,
+  getListSettlementsQueryKey,
   getListInventoryItemsQueryKey,
   getListInventoryMovementsQueryKey,
   getGetDashboardSummaryQueryKey,
@@ -81,6 +82,7 @@ export function useDebtsState() {
       getGetMonthlyPnlQueryKey(),
       getGetRecentActivityQueryKey(),
       getGetTvaSummaryQueryKey(),
+      getListSettlementsQueryKey(),
     ]) {
       queryClient.invalidateQueries({ queryKey });
     }

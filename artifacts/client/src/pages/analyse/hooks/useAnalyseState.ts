@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import {
   useGetCompany,
   useListTransactions,
+  useListSettlements,
   useListInventoryItems,
   useListInventoryMovements,
   useListAssets,
   useListPayrolls,
+  useListFunding,
 } from "@workspace/api-client-react";
 import { getMonths, monthLabel } from "@/lib/months";
 import { rangeStart, rangeEnd } from "@/lib/ledger";
@@ -34,12 +36,14 @@ export function useAnalyseState() {
 
   const { data: company } = useGetCompany();
   const { data: txns = [], isLoading: loadingTxns } = useListTransactions();
+  const { data: settlements = [], isLoading: loadingSettlements } = useListSettlements();
+  const { data: funding = [] } = useListFunding();
   const { data: mvs = [], isLoading: loadingMvs } = useListInventoryMovements();
   const { data: items = [] } = useListInventoryItems();
   const { data: assets = [], isLoading: loadingAssets } = useListAssets();
   const { data: payrolls = [], isLoading: loadingPayrolls } = useListPayrolls();
 
-  const isLoading = loadingTxns || loadingMvs || loadingAssets || loadingPayrolls;
+  const isLoading = loadingTxns || loadingMvs || loadingAssets || loadingPayrolls || loadingSettlements;
 
   // Detectors read movement names, not item ids — the same join the reports page
   // does before handing rows to any consumer.
@@ -61,6 +65,8 @@ export function useAnalyseState() {
 
   const insights = useInsights({
     txns,
+    settlements,
+    funding,
     mvs: mvsWithNames,
     items,
     assets,

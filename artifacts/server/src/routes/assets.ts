@@ -35,6 +35,7 @@ function computeAssetView(row: {
   purchaseDate: string;
   lifeYears: number;
   residualValue: string;
+  paymentAccount: string;
 }) {
   const cost = Number(row.costHt);
   const residual = Number(row.residualValue);
@@ -61,6 +62,7 @@ function computeAssetView(row: {
     purchaseDate: row.purchaseDate,
     lifeYears: row.lifeYears,
     residualValue: residual,
+    paymentAccount: row.paymentAccount,
     monthlyDepreciation,
     accumulatedDepreciation: accumulated,
     bookValue,
@@ -105,6 +107,7 @@ router.post("/assets", async (req, res): Promise<void> => {
       purchaseDate: toIsoDate(parsed.data.purchaseDate),
       lifeYears: parsed.data.lifeYears,
       residualValue: String(residualValue),
+      paymentAccount: parsed.data.paymentAccount ?? "CASH",
     })
     .returning();
   if (!row) {

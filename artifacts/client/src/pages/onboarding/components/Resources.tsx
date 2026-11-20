@@ -2,6 +2,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -25,6 +27,7 @@ function emptyAsset(): AssetData {
     purchaseDate: new Date().toISOString().slice(0, 10),
     lifeYears: 5,
     residualValue: 0,
+    paymentAccount: "CASH",
   };
 }
 
@@ -162,7 +165,7 @@ export function Assets({ state }: { state: OnboardingState }) {
                 <FormItem>
                   <FormLabel>{t("onboarding.asset.purchaseDate")}</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -201,6 +204,27 @@ export function Assets({ state }: { state: OnboardingState }) {
                       value={field.value ?? ""}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paymentAccount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.paymentAccount")}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="CASH">{t("consts.transaction.paymentMethod.CASH")}</SelectItem>
+                      <SelectItem value="BANK">{t("consts.transaction.paymentMethod.BANK")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

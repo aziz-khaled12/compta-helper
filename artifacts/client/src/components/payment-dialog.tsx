@@ -35,7 +35,12 @@ interface PaymentDialogProps {
   description?: string;
   /** Cap for this payment, and the amount shown in the hint line. */
   remaining: number;
-  initialAmount: number;
+  /**
+   * Amount to start the field with. `null` leaves it empty — a partial payment
+   * must be typed, because pre-filling it with the whole remainder is the one
+   * value that would make the entry fully paid.
+   */
+  initialAmount: number | null;
   initialPayer?: string;
   initialType?: "CASH" | "BANK";
   initialLabel?: string;
@@ -66,7 +71,7 @@ export function PaymentDialog({
 }: PaymentDialogProps) {
   const { t } = useTranslation();
   const [payer, setPayer] = useState(initialPayer);
-  const [amount, setAmount] = useState(String(initialAmount));
+  const [amount, setAmount] = useState(initialAmount == null ? "" : String(initialAmount));
   const [type, setType] = useState<"CASH" | "BANK">(initialType);
   const [reference, setReference] = useState("");
   const [label, setLabel] = useState(initialLabel);
@@ -76,7 +81,7 @@ export function PaymentDialog({
   useEffect(() => {
     if (!open) return;
     setPayer(initialPayer);
-    setAmount(String(initialAmount));
+    setAmount(initialAmount == null ? "" : String(initialAmount));
     setType(initialType);
     setReference("");
     setLabel(initialLabel);

@@ -148,17 +148,14 @@ export function daysBetween(from: string | Date, to: Date): number {
 /**
  * What is still owed on an entry.
  *
- * `PARTIAL` is treated as exactly half paid. That is not a measurement — the
- * schema stores a status, not an amount paid — it is the same convention the
- * « Ventes & Clients » and « Achats & Fournisseurs » reports already use. The
- * duplication is deliberate and is the lesser evil: the insights panel sits
- * directly beside those reports, and two different answers to "reste à payer"
- * on one screen reads as a bug to the user, not as a nuance.
+ * Read straight off the API's `rest`, which it derives from the payment rows —
+ * the same figure « Ventes & Clients » and « Achats & Fournisseurs » print. A
+ * status-based guess (the old `PARTIAL` → half convention) had to be kept in
+ * step with the reports by hand, and stopped being right the moment a partial
+ * entry could name its acompte.
  */
 export function outstandingTtc(t: TxRow): number {
-  if (t.status === "PAID") return 0;
-  if (t.status === "PARTIAL") return t.amountTtc * 0.5;
-  return t.amountTtc;
+  return t.rest;
 }
 
 /** A ratio, or `null` when the denominator cannot support one. */
@@ -366,7 +363,7 @@ export const DORMANT_DAYS = 180;
  * the two would be a category error: a stock level is not a period figure.
  */
 export function computeKpis(input: AnalyticsInput): KpiSnapshot {
-  const { txns, mvs, items, assets, payrolls, from, to, periodRef, asOf } = input;
+  const { txns, settlements, funding, mvs, items, assets, payrolls, from, to, periodRef, asOf } = input;
   const inPeriod = txns.filter((t) => inRange(t.date, from, to));
   const ofType = (type: string) => inPeriod.filter((t) => t.type === type);
 
@@ -394,11 +391,27 @@ export function computeKpis(input: AnalyticsInput): KpiSnapshot {
 
   // Cash and bank are running balances over the whole book, not period sums —
   // a balance is a position, and netting only the selected months would report
-  // a number no statement anywhere agrees with.
-  const paidThrough = (method: string) =>
-    txns
-      .filter((t) => t.paymentMethod === method && t.status === "PAID")
-      .reduce((s, t) => s + (t.type === "SALE" ? t.amountTtc : -t.amountTtc), 0);
+  // a number no statement anywhere agrees with. They are read from the
+  // settlement rows for the same reason the caisse report is: a facture's stored
+  // channel says how it was classified, not what went through the account.
+  const settledThrough = (method: "CASH" | "BANK") =>
+    settlements
+      .filter((s) => s.type === method)
+      .reduce((s, row) => s + (row.transactionType === "SALE" ? row.amount : -row.amount), 0);
+
+  // The other two movements a balance needs and a settlement list cannot carry:
+  // the capital paid in, and the equipment bought out of the account. Without
+  // the first the KPI reports a treasury the books do not have; without the
+  // second it reports money that has already been spent.
+  const fundingThrough = (method: "CASH" | "BANK") =>
+    funding
+      .filter((f) => (f.account ?? (f.source === "BANK_LOAN" ? "BANK" : "CASH")) === method)
+      .reduce((s, f) => s + f.amount, 0);
+
+  const assetsThrough = (method: "CASH" | "BANK") =>
+    assets
+      .filter((a) => (a.paymentAccount ?? "CASH") === method)
+      .reduce((s, a) => s + a.costHt, 0);
 
   const months = buildMonthSeries(inPeriod, from, to);
   const stockValue = items.reduce((s, i) => s + i.totalValue, 0);
@@ -421,8 +434,8 @@ export function computeKpis(input: AnalyticsInput): KpiSnapshot {
     payrollGross,
     payrollToRevenuePct: ratio(payrollGross, revenueHt),
 
-    cash: paidThrough("CASH"),
-    bank: paidThrough("BANK"),
+    cash: settledThrough("CASH") + fundingThrough("CASH") - assetsThrough("CASH"),
+    bank: settledThrough("BANK") + fundingThrough("BANK") - assetsThrough("BANK"),
     stockValue,
 
     receivables: agedBalance(sales, to),

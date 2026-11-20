@@ -34,7 +34,7 @@ export function UnpaidInvoices({ state }: { state: DebtsState }) {
           <TableHead className="text-right">{t("debts.colTtc")}</TableHead>
           <TableHead className="text-right">{t("debts.colPaid")}</TableHead>
           <TableHead className="text-right">{t("debts.colRest")}</TableHead>
-          <TableHead />
+          <TableHead className="text-right" />
         </TableRow>
       </TableHeader>
       <TableBody>

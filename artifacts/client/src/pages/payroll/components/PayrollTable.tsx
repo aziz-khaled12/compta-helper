@@ -16,7 +16,7 @@ export function PayrollTable({ state }: { state: ReturnType<typeof usePayrollSta
           <TableHead className="text-right">{t("payroll.colGross")}</TableHead>
           <TableHead className="text-right">{t("payroll.colDeductions")}</TableHead>
           <TableHead className="text-right font-bold text-primary">{t("payroll.colNet")}</TableHead>
-          <TableHead className="w-[100px]"></TableHead>
+          <TableHead className="w-[100px] text-right"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

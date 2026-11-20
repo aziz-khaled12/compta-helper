@@ -23,6 +23,8 @@ tags:
   - name: legal
   - name: insights
     description: Legal texts from the Journal Officiel matched to the company's declared identity.
+  - name: feedback
+    description: Free-text product feedback from the dashboard.
 paths:
   /auth/user:
     get:
@@ -349,6 +351,24 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TransactionPayment" }
+
+  # ============ SETTLEMENTS (TRÉSORERIE) ============
+  /settlements:
+    get:
+      operationId: listSettlements
+      tags: [transactions]
+      summary: >-
+        Every settlement recorded against the company's factures, dated as it was
+        paid. Includes the synthetic row that stands in for a facture settled
+        before payments were tracked.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Settlement" }
 
   # ============ DEBTS (MIGRATED BALANCES) ============
   /debts:
@@ -727,6 +747,27 @@ paths:
             attempt. The caller already holds the deterministic explanation for
             every finding, so this is expected to degrade to that text rather
             than surface an error.
+  /feedback:
+    post:
+      operationId: createFeedback
+      tags: [feedback]
+      summary: Send product feedback to the team
+      description: >
+        The feedback is stored before any mail is attempted, so a submission is
+        never lost when the mail provider is unconfigured or failing. `emailed`
+        in the response reports the mail hop only — a false value still means
+        the feedback was recorded and the client should confirm success.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FeedbackInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedbackReceipt" }
 
 components:
   parameters:
@@ -901,7 +942,7 @@ components:
 
     FixedAsset:
       type: object
-      required: [id, label, costHt, purchaseDate, lifeYears, residualValue, monthlyDepreciation, accumulatedDepreciation, bookValue]
+      required: [id, label, costHt, purchaseDate, lifeYears, residualValue, paymentAccount, monthlyDepreciation, accumulatedDepreciation, bookValue]
       properties:
         id: { type: string, format: uuid }
         label: { type: string }
@@ -910,6 +951,7 @@ components:
         purchaseDate: { type: string, format: date }
         lifeYears: { type: integer }
         residualValue: { type: number }
+        paymentAccount: { type: string, enum: [CASH, BANK], description: "How the asset was paid for: cash or bank transfer" }
         monthlyDepreciation: { type: number }
         accumulatedDepreciation: { type: number }
         bookValue: { type: number }
@@ -923,6 +965,7 @@ components:
         purchaseDate: { type: string, format: date }
         lifeYears: { type: integer, minimum: 1, maximum: 50 }
         residualValue: { type: number, minimum: 0, default: 0 }
+        paymentAccount: { type: string, enum: [CASH, BANK], default: CASH, description: "How the asset was paid for: cash or bank transfer" }
 
     AmortizationEntry:
       type: object
@@ -966,9 +1009,14 @@ components:
         rest: { type: number, description: "Remaining amount due" }
     TransactionPayment:
       type: object
-      required: [id, transactionId, date, payer, amount, type]
+      required: [id, transactionId, date, payer, amount, type, synthetic]
       properties:
-        id: { type: string, format: uuid }
+        id:
+          type: string
+          description: >-
+            The payment's uuid. A facture settled before payments were tracked has
+            no row, and is reported with a synthetic `legacy-<facture id>` marker
+            instead — payments are never edited or deleted, so this is display only.
         transactionId: { type: string, format: uuid }
         date: { type: string, format: date }
         payer: { type: string }
@@ -976,6 +1024,27 @@ components:
         type: { type: string, enum: [CASH, BANK] }
         reference: { type: string, nullable: true }
         label: { type: string, nullable: true }
+        synthetic:
+          type: boolean
+          description: >-
+            True on the stand-in row of a facture that was already PAID before
+            payments were recorded. The UI marks it so it is not read as a real
+            versement.
+    Settlement:
+      type: object
+      required: [id, transactionId, date, payer, amount, type, transactionType, transactionLabel, synthetic]
+      properties:
+        id: { type: string, description: "uuid, or `legacy-<facture id>` for the synthetic row" }
+        transactionId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        payer: { type: string }
+        amount: { type: number, minimum: 0 }
+        type: { type: string, enum: [CASH, BANK] }
+        reference: { type: string, nullable: true }
+        label: { type: string, nullable: true }
+        transactionType: { type: string, enum: [SALE, PURCHASE, EXPENSE] }
+        transactionLabel: { type: string }
+        synthetic: { type: boolean }
     TransactionPaymentInput:
       type: object
       required: [date, payer, amount, type]
@@ -1318,3 +1387,42 @@ components:
         cached:
           type: boolean
           description: "True when this is a stored narrative for identical findings"
+
+    FeedbackInput:
+      type: object
+      required: [category, message]
+      properties:
+        category:
+          type: string
+          enum: [IDEA, BUG, OTHER]
+        message:
+          type: string
+          minLength: 10
+          maxLength: 2000
+        contactEmail:
+          type: [string, 'null']
+          format: email
+          maxLength: 320
+          description: >
+            Optional reply-to. When absent the account email is used, so the
+            team can still answer.
+        locale:
+          type: string
+          enum: [fr, ar]
+          description: Language the feedback was written in.
+
+    FeedbackReceipt:
+      type: object
+      required: [id, createdAt, emailed]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        emailed:
+          type: boolean
+          description: >
+            True when the notification was handed to the mail provider. False
+            means "stored but not mailed", not "lost".

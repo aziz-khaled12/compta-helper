@@ -5,6 +5,7 @@
  * DJERDJERA Comptable API - Algerian small-business accounting
  * OpenAPI spec version: 0.1.0
  */
+import type { FixedAssetPaymentAccount } from "./fixedAssetPaymentAccount";
 
 export interface FixedAsset {
   id: string;
@@ -15,6 +16,8 @@ export interface FixedAsset {
   purchaseDate: Date;
   lifeYears: number;
   residualValue: number;
+  /** How the asset was paid for: cash or bank transfer */
+  paymentAccount: FixedAssetPaymentAccount;
   monthlyDepreciation: number;
   accumulatedDepreciation: number;
   bookValue: number;

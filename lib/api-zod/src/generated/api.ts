@@ -225,6 +225,9 @@ export const ListAssetsResponseItem = zod.object({
   purchaseDate: zod.coerce.date(),
   lifeYears: zod.number(),
   residualValue: zod.number(),
+  paymentAccount: zod
+    .enum(["CASH", "BANK"])
+    .describe("How the asset was paid for: cash or bank transfer"),
   monthlyDepreciation: zod.number(),
   accumulatedDepreciation: zod.number(),
   bookValue: zod.number(),
@@ -242,6 +245,8 @@ export const createAssetBodyLifeYearsMax = 50;
 export const createAssetBodyResidualValueDefault = 0;
 export const createAssetBodyResidualValueMin = 0;
 
+export const createAssetBodyPaymentAccountDefault = `CASH`;
+
 export const CreateAssetBody = zod.object({
   label: zod.string().min(1),
   category: zod.string().nullish(),
@@ -252,6 +257,10 @@ export const CreateAssetBody = zod.object({
     .number()
     .min(createAssetBodyResidualValueMin)
     .default(createAssetBodyResidualValueDefault),
+  paymentAccount: zod
+    .enum(["CASH", "BANK"])
+    .default(createAssetBodyPaymentAccountDefault)
+    .describe("How the asset was paid for: cash or bank transfer"),
 });
 
 export const DeleteAssetParams = zod.object({
@@ -395,7 +404,11 @@ export const ListTransactionPaymentsParams = zod.object({
 export const listTransactionPaymentsResponseAmountMin = 0;
 
 export const ListTransactionPaymentsResponseItem = zod.object({
-  id: zod.string().uuid(),
+  id: zod
+    .string()
+    .describe(
+      "The payment's uuid. A facture settled before payments were tracked has no row, and is reported with a synthetic `legacy-<facture id>` marker instead — payments are never edited or deleted, so this is display only.",
+    ),
   transactionId: zod.string().uuid(),
   date: zod.coerce.date(),
   payer: zod.string(),
@@ -403,6 +416,11 @@ export const ListTransactionPaymentsResponseItem = zod.object({
   type: zod.enum(["CASH", "BANK"]),
   reference: zod.string().nullish(),
   label: zod.string().nullish(),
+  synthetic: zod
+    .boolean()
+    .describe(
+      "True on the stand-in row of a facture that was already PAID before payments were recorded. The UI marks it so it is not read as a real versement.",
+    ),
 });
 export const ListTransactionPaymentsResponse = zod.array(
   ListTransactionPaymentsResponseItem,
@@ -425,6 +443,28 @@ export const CreateTransactionPaymentBody = zod.object({
   reference: zod.string().nullish(),
   label: zod.string().nullish(),
 });
+
+/**
+ * @summary Every settlement recorded against the company's factures, dated as it was paid. Includes the synthetic row that stands in for a facture settled before payments were tracked.
+ */
+export const listSettlementsResponseAmountMin = 0;
+
+export const ListSettlementsResponseItem = zod.object({
+  id: zod
+    .string()
+    .describe("uuid, or `legacy-<facture id>` for the synthetic row"),
+  transactionId: zod.string().uuid(),
+  date: zod.coerce.date(),
+  payer: zod.string(),
+  amount: zod.number().min(listSettlementsResponseAmountMin),
+  type: zod.enum(["CASH", "BANK"]),
+  reference: zod.string().nullish(),
+  label: zod.string().nullish(),
+  transactionType: zod.enum(["SALE", "PURCHASE", "EXPENSE"]),
+  transactionLabel: zod.string(),
+  synthetic: zod.boolean(),
+});
+export const ListSettlementsResponse = zod.array(ListSettlementsResponseItem);
 
 /**
  * @summary List migrated and manual debts with paid and remaining amounts
@@ -943,4 +983,34 @@ export const NarrateInsightsResponse = zod.object({
   cached: zod
     .boolean()
     .describe("True when this is a stored narrative for identical findings"),
+});
+
+/**
+ * The feedback is stored before any mail is attempted, so a submission is never lost when the mail provider is unconfigured or failing. `emailed` in the response reports the mail hop only — a false value still means the feedback was recorded and the client should confirm success.
+
+ * @summary Send product feedback to the team
+ */
+export const createFeedbackBodyMessageMin = 10;
+export const createFeedbackBodyMessageMax = 2000;
+
+export const createFeedbackBodyContactEmailMax = 320;
+
+export const CreateFeedbackBody = zod.object({
+  category: zod.enum(["IDEA", "BUG", "OTHER"]),
+  message: zod
+    .string()
+    .min(createFeedbackBodyMessageMin)
+    .max(createFeedbackBodyMessageMax),
+  contactEmail: zod
+    .string()
+    .email()
+    .max(createFeedbackBodyContactEmailMax)
+    .nullish()
+    .describe(
+      "Optional reply-to. When absent the account email is used, so the team can still answer.\n",
+    ),
+  locale: zod
+    .enum(["fr", "ar"])
+    .optional()
+    .describe("Language the feedback was written in."),
 });

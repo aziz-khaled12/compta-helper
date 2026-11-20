@@ -23,7 +23,7 @@ export function BilanView({
           <table className="w-full text-sm max-w-xl">
             <thead>
               <tr className="border-b">
-                <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Désignation</th>
+                <th className="px-3 py-2 text-left rtl:text-right text-xs font-semibold text-muted-foreground">Désignation</th>
                 <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">Montant (DA)</th>
               </tr>
             </thead>

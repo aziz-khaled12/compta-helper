@@ -219,6 +219,7 @@ export function useOnboardingState() {
               purchaseDate: asset.purchaseDate,
               lifeYears: asset.lifeYears,
               residualValue: asset.residualValue,
+              paymentAccount: asset.paymentAccount,
             },
           });
         }

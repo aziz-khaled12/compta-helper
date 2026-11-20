@@ -35,6 +35,8 @@ export interface InsightsState {
  */
 export function useInsights({
   txns,
+  settlements,
+  funding,
   mvs,
   items,
   assets,
@@ -46,7 +48,7 @@ export function useInsights({
   enabled,
 }: UseInsightsArgs): InsightsState {
   const { findings, kpi } = useAnalysis(
-    { txns, mvs, items, assets, payrolls, company, from, to, periodRef },
+    { txns, settlements, funding, mvs, items, assets, payrolls, company, from, to, periodRef },
     enabled,
   );
 

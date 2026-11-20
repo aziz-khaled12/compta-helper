@@ -46,4 +46,13 @@ void i18n
 applyLocaleMeta(i18n.resolvedLanguage ?? i18n.language);
 i18n.on("languageChanged", applyLocaleMeta);
 
+/** Flips between the two supported locales (FR <-> AR). */
+export function toggleLanguage(): void {
+  const current = i18n.resolvedLanguage ?? i18n.language;
+  const next = LANGUAGES.find(
+    (language) => !current.startsWith(language.code),
+  );
+  if (next) void i18n.changeLanguage(next.code as AppLanguage);
+}
+
 export default i18n;

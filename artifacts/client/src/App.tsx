@@ -24,6 +24,8 @@ import Analyse from "@/pages/analyse";
 import Legal from "@/pages/legal";
 import Login from "@/pages/login";
 import Landing from "@/pages/landing";
+import Pricing from "@/pages/pricing";
+import Checkout from "@/pages/checkout";
 import Onboarding from "@/pages/onboarding";
 import Assets from "./pages/resources";
 
@@ -55,6 +57,10 @@ function AppRouter() {
   }
 
   if (!isAuthenticated) {
+    // Public acquisition flow: bundles -> demo checkout -> account creation.
+    // `/login` itself renders the subscription gate until a pass is paid for.
+    if (location === "/pricing") return <Pricing />;
+    if (location === "/checkout") return <Checkout />;
     return location === "/login" ? <Login /> : <Landing />;
   }
 

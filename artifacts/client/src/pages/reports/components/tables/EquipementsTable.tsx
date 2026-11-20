@@ -18,11 +18,14 @@ export function EquipementsTable({
   return (
     <ReportCard title={t("reports.title.equipements")}>
       <table className="w-full text-sm">
-        <THead cols={[
-          t("reports.col.purchaseDate"), t("reports.col.label"), t("reports.col.ref"),
-          t("reports.col.originalValue"), t("reports.col.cumulatedDep"),
-          t("reports.col.netValue"), t("reports.col.category"),
-        ]} />
+        <THead
+          cols={[
+            t("reports.col.purchaseDate"), t("reports.col.label"), t("reports.col.ref"),
+            t("reports.col.originalValue"), t("reports.col.cumulatedDep"),
+            t("reports.col.netValue"), t("reports.col.category"),
+          ]}
+          numeric={[3, 4, 5]}
+        />
         <tbody>
           {data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">

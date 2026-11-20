@@ -11,3 +11,4 @@ export * from "./employees";
 export * from "./payrolls";
 export * from "./legal";
 export * from "./insights";
+export * from "./feedback";

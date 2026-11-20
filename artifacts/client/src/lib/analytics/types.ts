@@ -1,7 +1,9 @@
 import type {
   AssetRow,
+  FundingEntry,
   MvRow,
   PayrollRow,
+  SettlementRow,
   TxRow,
 } from "@/lib/ledger";
 
@@ -73,6 +75,10 @@ export interface Finding {
  */
 export interface AnalyticsInput {
   txns: TxRow[];
+  /** What actually moved through the caisse and the banque, dated as paid. */
+  settlements: SettlementRow[];
+  /** Capital and loans put into the accounts — the other side of the balance. */
+  funding: FundingEntry[];
   mvs: MvRow[];
   items: InventoryItemRow[];
   assets: AssetRow[];

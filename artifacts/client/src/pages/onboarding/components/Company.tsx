@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
 import {
   Form,
   FormControl,
@@ -366,7 +367,7 @@ export function Company({ state }: { state: OnboardingState }) {
                   <FormItem>
                     <FormLabel>{t("company.date")}</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DateInput {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +25,12 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import type { TFunction } from "i18next";
+import {
+  isAccessPassActive,
+  readAccessPass,
+  type AccessPass,
+} from "@/lib/access-pass";
+import { AccessGate, PassBanner } from "@/components/access-gate";
 
 const loginSchema = (t: TFunction) =>
   z.object({
@@ -73,7 +79,14 @@ function toFrenchError(t: TFunction, error: unknown): string {
 export default function Login() {
   const { t } = useTranslation();
   const { login, register } = useAuth();
+  const [, navigate] = useLocation();
   const [formError, setFormError] = useState<string | null>(null);
+  // Paying is the price of admission: the subscription pass written by the
+  // demo checkout is what unlocks these forms (client-side only).
+  const [pass] = useState<AccessPass | null>(() => {
+    const stored = readAccessPass();
+    return isAccessPassActive(stored) ? stored : null;
+  });
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema(t)),
@@ -95,6 +108,9 @@ export default function Login() {
     setFormError(null);
     try {
       await login(values.email, values.password);
+      // `/login` is not a route once a session exists — without this the
+      // authenticated shell mounts on it and renders the 404 page.
+      navigate("/");
     } catch (error) {
       setFormError(toFrenchError(t, error));
     }
@@ -109,10 +125,15 @@ export default function Login() {
         firstName: values.firstName,
         lastName: values.lastName,
       });
+      // A new account has no company yet: `/` renders the onboarding wizard
+      // in that case, which is exactly where a signup should land.
+      navigate("/");
     } catch (error) {
       setFormError(toFrenchError(t, error));
     }
   };
+
+  if (!pass) return <AccessGate />;
 
   return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_15%_10%,hsl(var(--landing-cyan)/.16),transparent_34%),hsl(var(--background))] flex flex-col items-center justify-center p-6">
@@ -122,11 +143,12 @@ export default function Login() {
           <Link href="/" className="inline-flex items-center justify-center">
             <img src="/logo.jpg" alt={t("landing.brand")} className="h-20 w-auto rounded-xl object-contain mix-blend-multiply" />
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">{t("auth.brand")}</h1>
           <p className="text-muted-foreground text-sm">
             {t("auth.tagline")}
           </p>
         </div>
+
+        <PassBanner pass={pass} />
 
         <Card className="shadow-lg">
           <CardHeader className="pb-4">

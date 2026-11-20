@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
 import { useTranslation } from "react-i18next";
@@ -65,7 +66,13 @@ export function DebtPaymentDialog({ state }: { state: DebtsState }) {
                 <Label htmlFor="debt-payment-date">
                   {t("debts.payment.date")}
                 </Label>
-                <Input id="debt-payment-date" type="date" {...form.register("date")} />
+                <Controller
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <DateInput id="debt-payment-date" {...field} />
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="debt-payment-amount">

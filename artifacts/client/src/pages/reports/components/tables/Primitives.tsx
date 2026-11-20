@@ -11,12 +11,29 @@ export function EmptyState() {
   );
 }
 
-export function THead({ cols }: { cols: string[] }) {
+/**
+ * Report head row.
+ *
+ * `numeric` lists the indexes of the money columns: their header sits on the
+ * same side as the figures below it (right, in both directions) instead of
+ * following the text columns to the inline start.
+ */
+export function THead({
+  cols,
+  numeric = [],
+}: {
+  cols: string[];
+  numeric?: number[];
+}) {
   return (
     <thead>
       <tr className="border-b bg-[hsl(var(--primary))/0.08]">
         {cols.map((c, i) => (
-          <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
+          <th
+            key={i}
+            className={`px-3 py-2.5 text-xs font-semibold text-muted-foreground whitespace-nowrap ${
+              numeric.includes(i) ? "text-right" : "text-left rtl:text-right"
+            }`}>
             {c}
           </th>
         ))}

@@ -21,6 +21,11 @@ export const fixedAssetsTable = pgTable("fixed_assets", {
   residualValue: numeric("residual_value", { precision: 18, scale: 2 })
     .notNull()
     .default("0"),
+  // How the acquisition was paid: CASH or BANK. Defaulted so rows registered
+  // before the field existed keep a sensible (and non-null) value.
+  paymentAccount: varchar("payment_account", { length: 10 })
+    .notNull()
+    .default("CASH"),
 });
 
 export const amortizationLogsTable = pgTable("amortization_logs", {

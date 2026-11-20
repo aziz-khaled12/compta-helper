@@ -8,6 +8,7 @@
 import type { TransactionPaymentType } from "./transactionPaymentType";
 
 export interface TransactionPayment {
+  /** The payment's uuid. A facture settled before payments were tracked has no row, and is reported with a synthetic `legacy-<facture id>` marker instead — payments are never edited or deleted, so this is display only. */
   id: string;
   transactionId: string;
   date: Date;
@@ -17,4 +18,6 @@ export interface TransactionPayment {
   type: TransactionPaymentType;
   reference?: string | null;
   label?: string | null;
+  /** True on the stand-in row of a facture that was already PAID before payments were recorded. The UI marks it so it is not read as a real versement. */
+  synthetic: boolean;
 }

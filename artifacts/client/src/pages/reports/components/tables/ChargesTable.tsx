@@ -14,11 +14,14 @@ export function ChargesTable({
   return (
     <ReportCard title={t("reports.title.charges")}>
       <table className="w-full text-sm">
-        <THead cols={[
-          t("reports.col.date"), t("reports.col.label"), t("reports.col.ref"),
-          t("reports.col.amount"), t("reports.col.paid"), t("reports.col.remaining"),
-          t("reports.col.observation"),
-        ]} />
+        <THead
+          cols={[
+            t("reports.col.date"), t("reports.col.label"), t("reports.col.ref"),
+            t("reports.col.amount"), t("reports.col.paid"), t("reports.col.remaining"),
+            t("reports.col.observation"),
+          ]}
+          numeric={[3, 4, 5]}
+        />
         <tbody>
           {data.data.map((r, i) => (
             <tr key={i} className="border-b hover:bg-muted/30 transition-colors even:bg-muted/10">

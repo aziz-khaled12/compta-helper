@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DateInput, isoMonthToDisplay } from "@/components/date-input";
 import { useTranslation } from "react-i18next";
-import { Calendar, Calculator } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { usePayrollState } from "./hooks/usePayrollState";
 import { SummaryCards } from "./components/SummaryCards";
 import { PayrollTable } from "./components/PayrollTable";
@@ -22,8 +22,12 @@ export default function Payroll() {
         </div>
 
         <div className="flex items-center gap-2 bg-card border rounded-md p-1 shadow-sm">
-          <div className="text-muted-foreground ps-3"><Calendar className="h-4 w-4" /></div>
-          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="border-none shadow-none focus-visible:ring-0 h-8" />
+          <DateInput
+            mode="month"
+            value={selectedMonth}
+            onChange={setSelectedMonth}
+            className="border-none shadow-none focus-visible:ring-0 h-8 w-36"
+          />
         </div>
       </div>
 
@@ -32,7 +36,7 @@ export default function Payroll() {
       <Card className="bg-card">
         <CardHeader className="flex flex-row items-center justify-between pb-2 border-b">
           <div>
-            <CardTitle>{t("payroll.monthPayrolls", { month: selectedMonth })}</CardTitle>
+            <CardTitle>{t("payroll.monthPayrolls", { month: isoMonthToDisplay(selectedMonth) })}</CardTitle>
             <CardDescription>{t("payroll.clickRow")}</CardDescription>
           </div>
           <Button onClick={handleGenerateAll} variant="secondary" size="sm" disabled={!employees.length || isGenerating}>

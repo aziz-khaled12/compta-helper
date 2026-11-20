@@ -80,12 +80,12 @@ export function InsightsSummaryCard({ findings }: { findings: Finding[] }) {
                   </span>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <div className="text-sm text-muted-foreground mt-1">
                 {t("reports.analysis.mostUrgent")}{" "}
                 <Badge variant="secondary" className="align-middle font-normal">
                   {leading.title}
                 </Badge>
-              </p>
+              </div>
             </div>
           </div>
 

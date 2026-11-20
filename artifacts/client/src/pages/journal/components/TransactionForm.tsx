@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
 import { Label } from "@/components/ui/label";
 import {
   Form,
@@ -137,7 +138,7 @@ export function TransactionForm({ state }: { state: ReturnType<typeof useJournal
                   <FormItem>
                     <FormLabel>{t("journal.form.date")}</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DateInput {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

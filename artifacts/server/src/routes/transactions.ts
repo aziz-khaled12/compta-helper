@@ -304,18 +304,21 @@ router.get("/transactions/:id/payments", async (req, res): Promise<void> => {
         ),
       );
     if (facture?.status === "PAID") {
-      res.json([
-        {
-          id: `legacy-${facture.id}`,
-          transactionId: facture.id,
-          date: facture.date,
-          payer: facture.thirdParty ?? "",
-          amount: Number(facture.amountTtc),
-          type: facture.paymentMethod === "CASH" ? "CASH" : "BANK",
-          reference: null,
-          label: facture.label,
-        },
-      ]);
+      res.json(
+        ListTransactionPaymentsResponse.parse([
+          {
+            id: `legacy-${facture.id}`,
+            transactionId: facture.id,
+            date: facture.date,
+            payer: facture.thirdParty ?? "",
+            amount: Number(facture.amountTtc),
+            type: facture.paymentMethod === "CASH" ? "CASH" : "BANK",
+            reference: null,
+            label: facture.label,
+            synthetic: true,
+          },
+        ]),
+      );
       return;
     }
   }
@@ -330,6 +333,7 @@ router.get("/transactions/:id/payments", async (req, res): Promise<void> => {
         type: row.type,
         reference: row.reference,
         label: row.label,
+        synthetic: false,
       })),
     ),
   );
@@ -355,6 +359,10 @@ router.post("/transactions/:id/payments", async (req, res): Promise<void> => {
   }
 
   const result = await db.transaction(async (tx) => {
+    // Locked for the rest of the transaction: two payments arriving together
+    // would otherwise both read the pre-payment total, both pass the cap, and
+    // between them settle more than the facture is worth. The sum below is only
+    // as trustworthy as the row it is read behind.
     const [facture] = await tx
       .select()
       .from(transactionsTable)
@@ -363,7 +371,8 @@ router.post("/transactions/:id/payments", async (req, res): Promise<void> => {
           eq(transactionsTable.id, params.data.id),
           eq(transactionsTable.companyId, companyId),
         ),
-      );
+      )
+      .for("update");
     if (!facture) return { error: "Facture introuvable.", status: 404 as const };
 
     const existing = await tx
@@ -418,6 +427,7 @@ router.post("/transactions/:id/payments", async (req, res): Promise<void> => {
     type: payment.type,
     reference: payment.reference,
     label: payment.label,
+    synthetic: false,
   });
 });
 

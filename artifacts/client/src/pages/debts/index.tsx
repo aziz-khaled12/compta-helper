@@ -124,8 +124,8 @@ export default function Debts() {
           invoice
             ? invoice.mode === "FULL"
               ? invoice.transaction.rest
-              : Math.min(invoice.transaction.rest, invoice.transaction.amountTtc)
-            : 0
+              : null
+            : null
         }
         initialPayer={invoice?.transaction.thirdParty ?? ""}
         initialType={

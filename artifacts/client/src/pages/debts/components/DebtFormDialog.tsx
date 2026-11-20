@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
 import {
   Form,
   FormControl,
@@ -138,7 +139,7 @@ export function DebtFormDialog({ state }: { state: DebtsState }) {
                   <FormItem>
                     <FormLabel>{t("debts.form.date")}</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DateInput {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

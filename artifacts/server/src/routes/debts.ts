@@ -194,12 +194,16 @@ router.post("/debts/:id/payments", async (req, res): Promise<void> => {
   }
 
   const result = await db.transaction(async (tx) => {
+    // Locked so the cap check below cannot be overtaken by a concurrent
+    // payment: without it both requests read the same pre-payment total and
+    // both pass a check neither of them should have.
     const [debt] = await tx
       .select()
       .from(debtsTable)
       .where(
         and(eq(debtsTable.id, params.data.id), eq(debtsTable.companyId, companyId)),
-      );
+      )
+      .for("update");
     if (!debt) return { error: "Dette introuvable.", status: 404 as const };
 
     const existing = await tx

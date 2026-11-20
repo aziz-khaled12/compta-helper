@@ -20,6 +20,7 @@ import {
   getGetRecentActivityQueryKey,
   getGetTvaSummaryQueryKey,
   getListTransactionPaymentsQueryKey,
+  getListSettlementsQueryKey,
 } from "@workspace/api-client-react";
 import type { Transaction } from "@workspace/api-client-react";
 
@@ -139,6 +140,9 @@ export function useJournalState() {
       getGetMonthlyPnlQueryKey(),
       getGetRecentActivityQueryKey(),
       getGetTvaSummaryQueryKey(),
+      // A payment (or an entry that carries an advance) is a movement through
+      // the caisse or the banque, so the settlement ledger is stale as well.
+      getListSettlementsQueryKey(),
     ]) {
       queryClient.invalidateQueries({ queryKey });
     }

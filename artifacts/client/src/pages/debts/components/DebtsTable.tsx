@@ -34,7 +34,7 @@ export function DebtsTable({
           <TableHead className="text-right">{t("debts.colRest")}</TableHead>
           <TableHead>{t("debts.colDate")}</TableHead>
           <TableHead>{t("debts.colOrigin")}</TableHead>
-          <TableHead />
+          <TableHead className="text-right" />
         </TableRow>
       </TableHeader>
       <TableBody>

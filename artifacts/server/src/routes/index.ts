@@ -4,6 +4,7 @@ import authRouter from "./auth";
 import companyRouter from "./company";
 import assetsRouter from "./assets";
 import transactionsRouter from "./transactions";
+import settlementsRouter from "./settlements";
 import debtsRouter from "./debts";
 import inventoryRouter from "./inventory";
 import employeesRouter from "./employees";
@@ -11,6 +12,7 @@ import payrollsRouter from "./payrolls";
 import dashboardRouter from "./dashboard";
 import legalRouter from "./legal";
 import insightsRouter from "./insights";
+import feedbackRouter from "./feedback";
 
 const router: IRouter = Router();
 
@@ -19,6 +21,7 @@ router.use(authRouter);
 router.use(companyRouter);
 router.use(assetsRouter);
 router.use(transactionsRouter);
+router.use(settlementsRouter);
 router.use(debtsRouter);
 router.use(inventoryRouter);
 router.use(employeesRouter);
@@ -26,5 +29,6 @@ router.use(payrollsRouter);
 router.use(dashboardRouter);
 router.use(legalRouter);
 router.use(insightsRouter);
+router.use(feedbackRouter);
 
 export default router;

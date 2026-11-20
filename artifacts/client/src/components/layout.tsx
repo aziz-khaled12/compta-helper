@@ -157,12 +157,9 @@ export function Layout({ children }: LayoutProps) {
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border shrink-0">
           <div className="flex flex-col">
             <div className="flex items-center gap-2.5">
-              <img src="/logo.jpg" alt={t("landing.brand")} className="h-9 w-auto rounded-md object-contain" />
+              <img src="/logo-mark.jpg" alt={t("landing.brand")} className="h-9 w-auto rounded-md object-contain" />
               <span className="sr-only">{company?.name || t("landing.brand")}</span>
             </div>
-            <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-wider mt-1">
-              {t("layout.accounting")}
-            </span>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto py-4 px-3">
@@ -215,7 +212,7 @@ onClick={() => void logout()}
                 className="w-64 p-0 bg-sidebar border-sidebar-border"
               >
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-                    <img src="/logo.jpg" alt={t("landing.brand")} className="h-9 w-auto rounded-md object-contain" />
+                    <img src="/logo-mark.jpg" alt={t("landing.brand")} className="h-9 w-auto rounded-md object-contain" />
                 </div>
                 <div className="p-3">
                   <NavLinks />

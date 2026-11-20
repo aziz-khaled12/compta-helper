@@ -172,6 +172,17 @@ export interface FundingInput {
   durationMonths?: number | null;
 }
 
+/**
+ * How the asset was paid for: cash or bank transfer
+ */
+export type FixedAssetPaymentAccount =
+  (typeof FixedAssetPaymentAccount)[keyof typeof FixedAssetPaymentAccount];
+
+export const FixedAssetPaymentAccount = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
 export interface FixedAsset {
   id: string;
   label: string;
@@ -181,10 +192,23 @@ export interface FixedAsset {
   purchaseDate: string;
   lifeYears: number;
   residualValue: number;
+  /** How the asset was paid for: cash or bank transfer */
+  paymentAccount: FixedAssetPaymentAccount;
   monthlyDepreciation: number;
   accumulatedDepreciation: number;
   bookValue: number;
 }
+
+/**
+ * How the asset was paid for: cash or bank transfer
+ */
+export type FixedAssetInputPaymentAccount =
+  (typeof FixedAssetInputPaymentAccount)[keyof typeof FixedAssetInputPaymentAccount];
+
+export const FixedAssetInputPaymentAccount = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
 
 export interface FixedAssetInput {
   /** @minLength 1 */
@@ -200,6 +224,8 @@ export interface FixedAssetInput {
   lifeYears: number;
   /** @minimum 0 */
   residualValue?: number;
+  /** How the asset was paid for: cash or bank transfer */
+  paymentAccount?: FixedAssetInputPaymentAccount;
 }
 
 export interface AmortizationEntry {
@@ -274,6 +300,7 @@ export const TransactionPaymentType = {
 } as const;
 
 export interface TransactionPayment {
+  /** The payment's uuid. A facture settled before payments were tracked has no row, and is reported with a synthetic `legacy-<facture id>` marker instead — payments are never edited or deleted, so this is display only. */
   id: string;
   transactionId: string;
   date: string;
@@ -283,6 +310,41 @@ export interface TransactionPayment {
   type: TransactionPaymentType;
   reference?: string | null;
   label?: string | null;
+  /** True on the stand-in row of a facture that was already PAID before payments were recorded. The UI marks it so it is not read as a real versement. */
+  synthetic: boolean;
+}
+
+export type SettlementType =
+  (typeof SettlementType)[keyof typeof SettlementType];
+
+export const SettlementType = {
+  CASH: "CASH",
+  BANK: "BANK",
+} as const;
+
+export type SettlementTransactionType =
+  (typeof SettlementTransactionType)[keyof typeof SettlementTransactionType];
+
+export const SettlementTransactionType = {
+  SALE: "SALE",
+  PURCHASE: "PURCHASE",
+  EXPENSE: "EXPENSE",
+} as const;
+
+export interface Settlement {
+  /** uuid, or `legacy-<facture id>` for the synthetic row */
+  id: string;
+  transactionId: string;
+  date: string;
+  payer: string;
+  /** @minimum 0 */
+  amount: number;
+  type: SettlementType;
+  reference?: string | null;
+  label?: string | null;
+  transactionType: SettlementTransactionType;
+  transactionLabel: string;
+  synthetic: boolean;
 }
 
 export type TransactionPaymentInputType =
@@ -749,6 +811,52 @@ export interface InsightsNarrative {
   model: string;
   /** True when this is a stored narrative for identical findings */
   cached: boolean;
+}
+
+export type FeedbackInputCategory =
+  (typeof FeedbackInputCategory)[keyof typeof FeedbackInputCategory];
+
+export const FeedbackInputCategory = {
+  IDEA: "IDEA",
+  BUG: "BUG",
+  OTHER: "OTHER",
+} as const;
+
+/**
+ * Language the feedback was written in.
+ */
+export type FeedbackInputLocale =
+  (typeof FeedbackInputLocale)[keyof typeof FeedbackInputLocale];
+
+export const FeedbackInputLocale = {
+  fr: "fr",
+  ar: "ar",
+} as const;
+
+export interface FeedbackInput {
+  category: FeedbackInputCategory;
+  /**
+   * @minLength 10
+   * @maxLength 2000
+   */
+  message: string;
+  /**
+   * Optional reply-to. When absent the account email is used, so the team can still answer.
+
+   * @maxLength 320
+   * @nullable
+   */
+  contactEmail?: string | null;
+  /** Language the feedback was written in. */
+  locale?: FeedbackInputLocale;
+}
+
+export interface FeedbackReceipt {
+  id: string;
+  createdAt: string;
+  /** True when the notification was handed to the mail provider. False means "stored but not mailed", not "lost".
+   */
+  emailed: boolean;
 }
 
 /**

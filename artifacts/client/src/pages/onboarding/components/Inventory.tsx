@@ -90,6 +90,13 @@ export function Inventory({ state }: { state: OnboardingState }) {
               <div>
                 <p className="text-sm font-medium">{item.name}</p>
                 <p className="text-xs text-muted-foreground">
+                  {/*
+                    Rendered through the i18n key in both locales: `ar.ts` already
+                    orders {{qty}} {{unit}} before the cost and uses دج, so a
+                    hard-coded branch here would only duplicate (and drift from)
+                    that copy. Never call a hook inside this map — changing the
+                    item count would change the hook count and React would throw.
+                  */}
                   {t("onboarding.item.rowSummary", {
                     category: t(`consts.inventory.category.${item.category}`),
                     qty: item.initialQty,

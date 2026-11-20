@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -155,7 +156,7 @@ export default function Employees() {
                       <FormItem>
                         <FormLabel>{t("employees.hireDate")}</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <DateInput {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

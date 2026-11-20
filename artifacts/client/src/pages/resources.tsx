@@ -17,6 +17,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateInput } from "@/components/date-input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +33,7 @@ const assetSchema = z.object({
   purchaseDate: z.string(),
   lifeYears: z.coerce.number().min(1, "Au moins 1 an").max(50),
   residualValue: z.coerce.number().default(0),
+  paymentAccount: z.enum(["CASH", "BANK"]),
 });
 
 function AmortizationSchedule({ assetId }: { assetId: string }) {
@@ -84,6 +88,7 @@ export default function Assets() {
       purchaseDate: new Date().toISOString().split('T')[0],
       lifeYears: 5,
       residualValue: 0,
+      paymentAccount: "CASH",
     },
   });
 
@@ -178,7 +183,7 @@ export default function Assets() {
                       <FormItem>
                         <FormLabel>{t("assets.purchaseDate")}</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <DateInput {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -214,6 +219,28 @@ export default function Assets() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="paymentAccount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("assets.paymentAccount")}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="CASH">{t("consts.transaction.paymentMethod.CASH")}</SelectItem>
+                          <SelectItem value="BANK">{t("consts.transaction.paymentMethod.BANK")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <Button type="submit" className="w-full mt-6" disabled={createAsset.isPending}>
                   {t("assets.submit")}
@@ -262,9 +289,14 @@ export default function Assets() {
               {assets?.map((asset) => (
                 <AccordionItem key={asset.id} value={asset.id} className="border-b-0 px-2">
                   <AccordionTrigger className="hover:no-underline py-3 px-4 rounded-md hover:bg-muted/50 data-[state=open]:bg-muted/50 transition-colors">
-                    <div className="grid grid-cols-12 gap-4 w-full items-center text-left">
+                    <div className="grid grid-cols-12 gap-4 w-full items-center text-left rtl:text-right">
                       <div className="col-span-3 font-medium">
-                        {asset.label}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>{asset.label}</span>
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            {t(`consts.transaction.paymentMethod.${asset.paymentAccount}`)}
+                          </Badge>
+                        </div>
                         {asset.category && <div className="text-xs font-normal text-muted-foreground">{asset.category}</div>}
                       </div>
                       <div className="col-span-2 text-sm">

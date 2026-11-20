@@ -29,6 +29,8 @@ import type {
   Employee,
   EmployeeInput,
   ErrorEnvelope,
+  FeedbackInput,
+  FeedbackReceipt,
   FixedAsset,
   FixedAssetInput,
   FundingEntry,
@@ -52,6 +54,7 @@ import type {
   Payroll,
   PayrollInput,
   RegisterRequest,
+  Settlement,
   TokenResponse,
   Transaction,
   TransactionInput,
@@ -1715,6 +1718,81 @@ export const useCreateTransactionPayment = <
 > => {
   return useMutation(getCreateTransactionPaymentMutationOptions(options));
 };
+
+/**
+ * @summary Every settlement recorded against the company's factures, dated as it was paid. Includes the synthetic row that stands in for a facture settled before payments were tracked.
+ */
+export const getListSettlementsUrl = () => {
+  return `/api/settlements`;
+};
+
+export const listSettlements = async (
+  options?: RequestInit,
+): Promise<Settlement[]> => {
+  return customFetch<Settlement[]>(getListSettlementsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSettlementsQueryKey = () => {
+  return [`/api/settlements`] as const;
+};
+
+export const getListSettlementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSettlements>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlements>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSettlementsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSettlements>>> = ({
+    signal,
+  }) => listSettlements({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSettlementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSettlements>>
+>;
+export type ListSettlementsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Every settlement recorded against the company's factures, dated as it was paid. Includes the synthetic row that stands in for a facture settled before payments were tracked.
+ */
+
+export function useListSettlements<
+  TData = Awaited<ReturnType<typeof listSettlements>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlements>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSettlementsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List migrated and manual debts with paid and remaining amounts
@@ -3695,4 +3773,92 @@ export const useNarrateInsights = <
   TContext
 > => {
   return useMutation(getNarrateInsightsMutationOptions(options));
+};
+
+/**
+ * The feedback is stored before any mail is attempted, so a submission is never lost when the mail provider is unconfigured or failing. `emailed` in the response reports the mail hop only — a false value still means the feedback was recorded and the client should confirm success.
+
+ * @summary Send product feedback to the team
+ */
+export const getCreateFeedbackUrl = () => {
+  return `/api/feedback`;
+};
+
+export const createFeedback = async (
+  feedbackInput: FeedbackInput,
+  options?: RequestInit,
+): Promise<FeedbackReceipt> => {
+  return customFetch<FeedbackReceipt>(getCreateFeedbackUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(feedbackInput),
+  });
+};
+
+export const getCreateFeedbackMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFeedback>>,
+    TError,
+    { data: BodyType<FeedbackInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFeedback>>,
+  TError,
+  { data: BodyType<FeedbackInput> },
+  TContext
+> => {
+  const mutationKey = ["createFeedback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFeedback>>,
+    { data: BodyType<FeedbackInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFeedback(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFeedbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFeedback>>
+>;
+export type CreateFeedbackMutationBody = BodyType<FeedbackInput>;
+export type CreateFeedbackMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send product feedback to the team
+ */
+export const useCreateFeedback = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFeedback>>,
+    TError,
+    { data: BodyType<FeedbackInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFeedback>>,
+  TError,
+  { data: BodyType<FeedbackInput> },
+  TContext
+> => {
+  return useMutation(getCreateFeedbackMutationOptions(options));
 };

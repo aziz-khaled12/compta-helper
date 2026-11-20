@@ -23,8 +23,8 @@ export function PaymentModal({ state }: { state: ReturnType<typeof useJournalSta
         selectedTransaction
           ? paymentMode === "FULL"
             ? selectedTransaction.rest
-            : Math.min(selectedTransaction.rest, selectedTransaction.amountTtc)
-          : 0
+            : null
+          : null
       }
       initialPayer={selectedTransaction?.thirdParty ?? ""}
       initialType={selectedTransaction?.paymentMethod === "CASH" ? "CASH" : "BANK"}

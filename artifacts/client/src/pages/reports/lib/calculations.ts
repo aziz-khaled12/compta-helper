@@ -11,34 +11,73 @@ import type {
   FundingEntry,
   MvRow,
   PayrollRow,
+  SettlementRow,
   TxRow,
 } from "@/lib/ledger";
 
+/**
+ * The caisse or the banque, as a chronological ledger of what actually moved.
+ *
+ * It reads `settlements`, not `transactions`: a facture carries one channel and
+ * one date, while the money that went through the till or the bank is the
+ * payment rows, each dated the day it was paid. Reading the facture instead
+ * counted a credit sale as an encaissement on the day it was invoiced, and put
+ * the whole TTC in the ledger the moment a first acompte arrived.
+ *
+ * `synthetic` settlements are the stand-in rows of factures settled before
+ * payments were tracked; they belong here exactly like a recorded payment.
+ *
+ * An asset acquisition is a third kind of row: it has no facture and therefore
+ * no settlement, but the money still left the account named on the asset. It is
+ * dated at the purchase date and debited at the cost — assets carry no TVA in
+ * this app, so the cost is exactly what was paid.
+ */
 export function computeCaisseOrBanque(
-  txns: TxRow[],
+  settlements: SettlementRow[],
   funding: FundingEntry[],
+  assets: AssetRow[],
   from: Date,
   to: Date,
   method: "CASH" | "BANK",
 ) {
-  const rows = txns
-    .filter((t) => {
-      if (method === "CASH") return t.paymentMethod === "CASH";
-      return t.paymentMethod === "BANK" || t.paymentMethod === "CREDIT";
-    })
-    .filter((t) => inRange(t.date, from, to))
-    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const rows = settlements
+    .filter((s) => s.type === method)
+    .filter((s) => inRange(s.date, from, to));
 
   const fundingRows = funding
     .filter((f) => (f.account ?? (f.source === "BANK_LOAN" ? "BANK" : "CASH")) === method)
     .filter((f) => inRange(f.date, from, to));
+
+  const assetRows = assets
+    .filter((a) => (a.paymentAccount ?? "CASH") === method)
+    .filter((a) => inRange(a.purchaseDate, from, to));
+
+  // Numbered against the whole register so `IMM-002` names the same asset here
+  // as it does on the Equipements report, whichever month is selected.
+  const assetRef = new Map(
+    assets.map((a, i) => [a.id, `IMM-${String(i + 1).padStart(3, "0")}`]),
+  );
+
   const ledgerRows = [
-    ...rows.map((t) => ({ date: t.date, transaction: t as TxRow, funding: null })),
-    ...fundingRows.map((f) => ({ date: f.date, transaction: null, funding: f })),
+    ...rows.map((s) => ({ date: s.date, settlement: s as SettlementRow, funding: null, asset: null })),
+    ...fundingRows.map((f) => ({ date: f.date, settlement: null, funding: f, asset: null })),
+    ...assetRows.map((a) => ({ date: a.purchaseDate, settlement: null, funding: null, asset: a })),
   ].sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
   let balance = 0;
   const data = ledgerRows.map((row, i) => {
+    if (row.asset) {
+      balance -= row.asset.costHt;
+      return {
+        date: fmtDate(row.asset.purchaseDate),
+        label: row.asset.label,
+        ref: assetRef.get(row.asset.id) ?? "IMM",
+        enc: 0,
+        dec: row.asset.costHt,
+        solde: balance,
+        obs: row.asset.category || "",
+      };
+    }
     if (row.funding) {
       balance += row.funding.amount;
       return {
@@ -51,18 +90,18 @@ export function computeCaisseOrBanque(
         obs: "",
       };
     }
-    const t = row.transaction!;
-    const enc = t.type === "SALE" ? t.amountTtc : 0;
-    const dec = t.type !== "SALE" ? t.amountTtc : 0;
+    const s = row.settlement!;
+    const enc = s.transactionType === "SALE" ? s.amount : 0;
+    const dec = s.transactionType === "SALE" ? 0 : s.amount;
     balance += enc - dec;
     return {
-      date: fmtDate(t.date),
-      label: t.label,
-      ref: `REF-${String(i + 1).padStart(3, "0")}`,
+      date: fmtDate(s.date),
+      label: s.transactionLabel,
+      ref: `REG-${String(i + 1).padStart(3, "0")}`,
       enc,
       dec,
       solde: balance,
-      obs: t.thirdParty || t.category || "",
+      obs: s.payer || s.label || "",
     };
   });
 
@@ -110,8 +149,9 @@ export function computeAchatsOrVentes(
     .sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
   const data = rows.map((t, i) => {
-    const versements =
-      t.status === "PAID" ? t.amountTtc : t.status === "PARTIAL" ? t.amountTtc * 0.5 : 0;
+    // What the settlement rows say was actually paid, not a reading of the
+    // status: a 500 acompte on a 1 190 facture is 500, never half of it.
+    const versements = t.paid;
     return {
       date: fmtDate(t.date),
       label: t.label,
@@ -120,7 +160,7 @@ export function computeAchatsOrVentes(
       tva: t.tvaAmount,
       ttc: t.amountTtc,
       versements,
-      reste: Math.max(0, t.amountTtc - versements),
+      reste: t.rest,
       thirdParty: t.thirdParty || "",
     };
   });
@@ -162,14 +202,14 @@ export function computeCharges(
   }[] = [];
 
   for (const t of expenses) {
-    const paye = t.status === "PAID" ? t.amountTtc : t.status === "PARTIAL" ? t.amountTtc * 0.5 : 0;
+    const paye = t.paid;
     data.push({
       date: fmtDate(t.date),
       label: t.label,
       ref: `CHG-${String(idx++).padStart(3, "0")}`,
       montant: t.amountTtc,
       paye,
-      reste: Math.max(0, t.amountTtc - paye),
+      reste: t.rest,
       obs: t.category || t.thirdParty || "",
     });
   }
@@ -263,6 +303,7 @@ export function computeBilan(
   assets: AssetRow[],
   payrolls: PayrollRow[],
   funding: FundingEntry[],
+  settlements: SettlementRow[],
   from: Date,
   to: Date,
 ) {
@@ -318,17 +359,27 @@ export function computeBilan(
   const totalAssetsValue = assets.reduce((s, a) => s + a.bookValue, 0);
   const totalDepreciation = assets.reduce((s, a) => s + a.accumulatedDepreciation, 0);
 
-  const cashTxns = txns.filter((t) => t.paymentMethod === "CASH" && t.status === "PAID");
-  const caisse =
-    cashTxns.filter((t) => t.type === "SALE").reduce((s, t) => s + t.amountTtc, 0) -
-    cashTxns.filter((t) => t.type !== "SALE").reduce((s, t) => s + t.amountTtc, 0);
+  // A balance-sheet position, not a period figure: every settlement counts,
+  // whichever month it falls in. The old reading keyed off the facture's stored
+  // channel, so a credit sale never touched the bank and a partially paid one
+  // counted as fully encaissée.
+  const settledThrough = (method: "CASH" | "BANK") =>
+    settlements
+      .filter((s) => s.type === method)
+      .reduce((s, row) => s + (row.transactionType === "SALE" ? row.amount : -row.amount), 0);
 
-  const bankTxns = txns.filter(
-    (t) => (t.paymentMethod === "BANK" || t.paymentMethod === "CREDIT") && t.status === "PAID",
-  );
-  const banque =
-    bankTxns.filter((t) => t.type === "SALE").reduce((s, t) => s + t.amountTtc, 0) -
-    bankTxns.filter((t) => t.type !== "SALE").reduce((s, t) => s + t.amountTtc, 0);
+  // Buying equipment emptied an account too, and it never passes through a
+  // settlement (there is no facture behind a fixed asset). Deducted here so the
+  // cash on the balance sheet is money that is actually still there — and so a
+  // cash purchase moves value from Caisse/Banque to Immobilisations instead of
+  // inflating total actif.
+  const assetsThrough = (method: "CASH" | "BANK") =>
+    assets
+      .filter((a) => (a.paymentAccount ?? "CASH") === method)
+      .reduce((s, a) => s + a.costHt, 0);
+
+  const caisse = settledThrough("CASH") - assetsThrough("CASH");
+  const banque = settledThrough("BANK") - assetsThrough("BANK");
 
   const fundingCaisse = funding
     .filter((f) => (f.account ?? (f.source === "BANK_LOAN" ? "BANK" : "CASH")) === "CASH")
@@ -338,12 +389,12 @@ export function computeBilan(
     .reduce((s, f) => s + f.amount, 0);
 
   const creancesClient = sales
-    .filter((t) => t.status !== "PAID")
-    .reduce((s, t) => s + (t.status === "PARTIAL" ? t.amountTtc * 0.5 : t.amountTtc), 0);
+    .filter((t) => t.rest > 0)
+    .reduce((s, t) => s + t.rest, 0);
 
   const dettesExploitation = [...purchases, ...expenses]
-    .filter((t) => t.status !== "PAID")
-    .reduce((s, t) => s + (t.status === "PARTIAL" ? t.amountTtc * 0.5 : t.amountTtc), 0);
+    .filter((t) => t.rest > 0)
+    .reduce((s, t) => s + t.rest, 0);
 
   const capitalSocial = funding
     .filter((f) => f.source.toLowerCase().includes("capital") || f.source === "EQUITY")

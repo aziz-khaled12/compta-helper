@@ -114,6 +114,9 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   let amortizationExpense = 0;
   for (const a of assets) {
     const cost = Number(a.costHt);
+    // The acquisition left the till or the bank on its purchase date. No
+    // facture backs a fixed asset, so nothing else has deducted it.
+    summary.cashPosition -= cost;
     const residual = Number(a.residualValue);
     const totalMonths = a.lifeYears * 12;
     const depreciable = Math.max(0, cost - residual);

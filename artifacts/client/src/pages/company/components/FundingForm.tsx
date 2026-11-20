@@ -1,5 +1,6 @@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/date-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -55,7 +56,7 @@ export function FundingForm({ state }: { state: ReturnType<typeof useCompanyStat
             <FormField control={fundingForm.control} name="date" render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("companyPage.fundingDate")}</FormLabel>
-                <FormControl><Input type="date" {...field} /></FormControl>
+                <FormControl><DateInput {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

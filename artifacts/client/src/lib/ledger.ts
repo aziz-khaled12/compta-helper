@@ -90,6 +90,35 @@ export type TxRow = {
   unitCostHt?: number | null;
   /** `quantity × unitCostHt`, frozen at posting. Only a sale carries one. */
   costOfGoodsSold?: number | null;
+  /**
+   * What has actually been settled against this entry, derived by the API from
+   * its payment rows. This is the figure to read — `status` is a stored summary
+   * that lags behind it.
+   */
+  paid: number;
+  /** `amountTtc - paid`, never negative. */
+  rest: number;
+};
+
+/**
+ * One settlement, dated the day it was paid.
+ *
+ * `synthetic` marks the stand-in row the API reports for a facture that was
+ * already PAID before payments were tracked; it has no payment row behind it.
+ */
+export type SettlementRow = {
+  id: string;
+  transactionId: string;
+  date: string | Date;
+  payer: string;
+  amount: number;
+  type: string;
+  /** Free-text note carried on a recorded payment. */
+  reference?: string | null;
+  label?: string | null;
+  transactionType: string;
+  transactionLabel: string;
+  synthetic: boolean;
 };
 
 export type MvRow = {
@@ -113,6 +142,8 @@ export type AssetRow = {
   purchaseDate: string | Date;
   lifeYears: number;
   residualValue: number;
+  /** Account the acquisition was paid from. Defaults to CASH when absent. */
+  paymentAccount?: string | null;
   monthlyDepreciation: number;
   accumulatedDepreciation: number;
   bookValue: number;
