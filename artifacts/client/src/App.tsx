@@ -11,6 +11,8 @@ import {
   getGetCompanyQueryKey,
   useGetCompany,
 } from "@workspace/api-client-react";
+import { RequireService } from "@/components/locked-service";
+import { SubscriptionProvider, useSubscription } from "@/lib/subscription";
 
 import Dashboard from "@/pages/dashboard";
 import Company from "@/pages/company";
@@ -27,6 +29,7 @@ import Landing from "@/pages/landing";
 import Pricing from "@/pages/pricing";
 import Checkout from "@/pages/checkout";
 import Onboarding from "@/pages/onboarding";
+import Subscription from "@/pages/subscription";
 import Assets from "./pages/resources";
 
 const queryClient = new QueryClient({
@@ -42,6 +45,7 @@ function AppRouter() {
   const { t } = useTranslation();
   const [location] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
+  const { isActive } = useSubscription();
   const { data: company, isLoading: companyLoading } = useGetCompany({
     // The generated hook's `query` type requires the key even though it defaults
     // it internally; passing the same key it would default to is a no-op.
@@ -57,11 +61,17 @@ function AppRouter() {
   }
 
   if (!isAuthenticated) {
-    // Public acquisition flow: bundles -> demo checkout -> account creation.
+    // Public acquisition flow: plans -> demo checkout or free trial -> account.
     // `/login` itself renders the subscription gate until a pass is paid for.
     if (location === "/pricing") return <Pricing />;
     if (location === "/checkout") return <Checkout />;
     return location === "/login" ? <Login /> : <Landing />;
+  }
+
+  // An expired pass (or a finished trial) blocks every service, core ones
+  // included: the renewal screen is the only reachable page.
+  if (!isActive) {
+    return <Subscription standalone />;
   }
 
   if (!company) {
@@ -73,15 +83,46 @@ function AppRouter() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/company" component={Company} />
-        <Route path="/resources" component={Assets} />
+        <Route path="/resources">
+          <RequireService service="assets">
+            <Assets />
+          </RequireService>
+        </Route>
         <Route path="/journal" component={Journal} />
-        <Route path="/debts" component={Debts} />
+        <Route path="/debts">
+          <RequireService service="debts">
+            <Debts />
+          </RequireService>
+        </Route>
         <Route path="/inventory" component={Inventory} />
-        <Route path="/employees" component={Employees} />
-        <Route path="/payroll" component={Payroll} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/analyse" component={Analyse} />
-        <Route path="/legal" component={Legal} />
+        <Route path="/employees">
+          <RequireService service="employees">
+            <Employees />
+          </RequireService>
+        </Route>
+        <Route path="/payroll">
+          <RequireService service="payroll">
+            <Payroll />
+          </RequireService>
+        </Route>
+        <Route path="/reports">
+          <RequireService service="reports">
+            <Reports />
+          </RequireService>
+        </Route>
+        <Route path="/analyse">
+          <RequireService service="analyse">
+            <Analyse />
+          </RequireService>
+        </Route>
+        <Route path="/legal">
+          <RequireService service="legal">
+            <Legal />
+          </RequireService>
+        </Route>
+        <Route path="/subscription">
+          <Subscription />
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -92,13 +133,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <AppRouter />
-          </WouterRouter>
-          <Toaster />
-          <SonnerToaster />
-        </TooltipProvider>
+        <SubscriptionProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <AppRouter />
+            </WouterRouter>
+            <Toaster />
+            <SonnerToaster />
+          </TooltipProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

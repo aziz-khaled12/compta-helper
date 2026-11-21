@@ -2,7 +2,8 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { PublicFooter, PublicHeader } from "@/components/public-header";
-import { BundleCards } from "@/components/pricing/bundle-cards";
+import { PlanCards } from "@/components/pricing/plan-cards";
+import { TrialBand } from "@/components/pricing/trial-cta";
 
 /**
  * Public bundle showcase. Every card hands off to `/checkout`, which is the
@@ -32,7 +33,8 @@ export default function Pricing() {
           </div>
 
           <div className="mt-12 sm:mt-16">
-            <BundleCards />
+            <TrialBand />
+            <PlanCards />
           </div>
 
           <p className="mt-10 text-center text-xs text-[#8a9caf]">

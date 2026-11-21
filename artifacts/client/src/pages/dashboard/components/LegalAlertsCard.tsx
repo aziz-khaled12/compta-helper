@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Info, Scale, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Info, LockKeyhole, Scale, ShieldCheck } from "lucide-react";
 import { useListLegalAlerts } from "@workspace/api-client-react";
 import {
   documentHeading,
   relevanceLabel,
 } from "@/pages/legal/lib/reason";
+import { useSubscription } from "@/lib/subscription";
 
 /**
  * Dashboard preview of the legal feed.
@@ -19,9 +20,39 @@ import {
  */
 export function LegalAlertsCard() {
   const { t } = useTranslation();
+  const { canUse } = useSubscription();
   const { data, isLoading } = useListLegalAlerts({});
   const alerts = data ?? [];
   const preview = alerts.slice(0, 3);
+
+  // The legal feed is a paid add-on: without it the card advertises itself
+  // instead of teasing alerts the user cannot open.
+  if (!canUse("legal")) {
+    return (
+      <Card className="bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary" />
+            {t("dashboard.legal.title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <LockKeyhole className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm font-medium">{t("locked.title")}</p>
+            <p className="max-w-xs text-xs text-muted-foreground">
+              {t("locked.description", { service: t("nav.legal") })}
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/subscription?add=legal">
+                {t("subscription.addService")}
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card">

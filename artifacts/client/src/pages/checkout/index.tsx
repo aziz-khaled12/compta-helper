@@ -1,40 +1,31 @@
-import { useState, type ReactNode } from "react";
-import { useForm } from "react-hook-form";import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import type { TFunction } from "i18next";
+import { useState } from "react";
+import type { ReactNode } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  CreditCard,
-  Loader2,
-  Lock,
-  Sparkles,
-} from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, CreditCard, Sparkles } from "lucide-react";
 import { PublicFooter, PublicHeader } from "@/components/public-header";
 import { Price } from "@/components/price";
+import { CardForm, type CardDetails } from "@/components/pricing/card-form";
+import { TrialCta } from "@/components/pricing/trial-cta";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import {
-  bundlePrice,
-  getBundle,
+  ADDON_PRICE,
+  ADDON_SERVICES,
+  DEFAULT_PLAN_ID,
+  FULL_PRICE,
+  PARTIAL_PRICE,
   isBillingCycle,
+  isPlanId,
+  isServiceId,
+  planPrice,
+  serviceMeta,
   type BillingCycle,
-  type Bundle,
-} from "@/lib/bundles";
+  type PlanId,
+  type ServiceId,
+} from "@/lib/plans";
 import {
-  billingExpiry,
-  createPassReference,
+  createPass,
   formatPassDate,
   isAccessPassActive,
   readAccessPass,
@@ -42,52 +33,19 @@ import {
   type AccessPass,
 } from "@/lib/access-pass";
 
-const onlyDigits = (value: string) => value.replace(/\D/g, "");
-
-function formatCardNumber(value: string): string {
-  return onlyDigits(value).slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
-}
-
-function formatExpiry(value: string): string {
-  const digits = onlyDigits(value).slice(0, 4);
-  return digits.length <= 2 ? digits : `${digits.slice(0, 2)}/${digits.slice(2)}`;
-}
-
-/** A card is valid through the end of its expiry month. */
-function isExpired(value: string, now: Date = new Date()): boolean {
-  const [month, year] = value.split("/").map(Number);
-  if (!month || !year) return true;
-  return new Date(2000 + year, month, 1).getTime() <= now.getTime();
-}
-
-const checkoutSchema = (t: TFunction) =>
-  z.object({
-    cardName: z.string().trim().min(3, t("checkout.errCardName")),
-    cardNumber: z
-      .string()
-      .refine(
-        (value) => /^\d{16}$/.test(onlyDigits(value)),
-        t("checkout.errCardNumber"),
-      ),
-    expiry: z
-      .string()
-      .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, t("checkout.errExpiry"))
-      .refine((value) => !isExpired(value), t("checkout.errExpiryPast")),
-    cvv: z.string().regex(/^\d{3,4}$/, t("checkout.errCvv")),
-  });
-
-type CheckoutValues = z.infer<ReturnType<typeof checkoutSchema>>;
-
 function OrderSummary({
-  bundle,
+  plan,
   billing,
+  selected,
   price,
 }: {
-  bundle: Bundle;
+  plan: PlanId;
   billing: BillingCycle;
+  selected: ServiceId[];
   price: number;
 }) {
   const { t } = useTranslation();
+  const isPartial = plan === "partial";
 
   return (
     <aside
@@ -102,21 +60,41 @@ function OrderSummary({
       <div className="mt-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-lg font-bold tracking-[-0.02em] text-[#14284f]">
-            {t(`bundle.${bundle.id}.name`)}
+            {t(`plan.${plan}.name`)}
           </p>
           <p className="mt-0.5 text-sm text-[#687a91]">
-            {t(`bundle.${bundle.id}.tagline`)}
+            {t(`plan.${plan}.tagline`)}
           </p>
         </div>
-        {bundle.highlighted && (
+        {plan === "full" && (
           <span className="mt-1 shrink-0 rounded-full bg-[#fdf3dd] px-2.5 py-0.5 text-[10px] font-bold text-[#a97812]">
             {t("pricing.featured")}
           </span>
         )}
       </div>
 
-      <dl className="mt-5 border-t border-[#eef4f9] pt-5">
-        <div className="flex items-center justify-between gap-3 text-sm">
+      <dl className="mt-5 space-y-2 border-t border-[#eef4f9] pt-5 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-[#687a91]">{t("checkout.basePlan")}</dt>
+          <dd className="font-medium text-[#14284f]">
+            <Price amount={isPartial ? PARTIAL_PRICE : FULL_PRICE} />
+          </dd>
+        </div>
+        {selected.map((service) => (
+          <div
+            key={service}
+            className="flex items-center justify-between gap-3">
+            <dt className="min-w-0 truncate text-xs text-[#687a91]">
+              {t("checkout.addonLine", {
+                service: t(serviceMeta(service).nameKey),
+              })}
+            </dt>
+            <dd className="shrink-0 text-xs font-medium text-[#14284f]" dir="ltr">
+              + <Price amount={ADDON_PRICE} />
+            </dd>
+          </div>
+        ))}
+        <div className="flex items-center justify-between gap-3">
           <dt className="text-[#687a91]">{t("checkout.billing")}</dt>
           <dd className="font-medium text-[#14284f]">
             {billing === "yearly"
@@ -142,10 +120,77 @@ function OrderSummary({
       </Link>
 
       <div className="mt-6 flex items-center gap-2 rounded-lg bg-[#f7fbff] px-3 py-2 text-[11px] font-medium text-[#53627a]">
-        <CreditCard className="h-3.5 w-3.5 shrink-0 text-[#087fbb]" aria-hidden="true" />
+        <CreditCard
+          className="h-3.5 w-3.5 shrink-0 text-[#087fbb]"
+          aria-hidden="true"
+        />
         {t("checkout.accepted")}
       </div>
     </aside>
+  );
+}
+
+/** Toggleable add-on list — only rendered for the partial pack. */
+function AddonPicker({
+  selected,
+  onToggle,
+}: {
+  selected: ServiceId[];
+  onToggle: (service: ServiceId) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="mb-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h3 className="text-sm font-bold tracking-[-0.01em] text-[#14284f]">
+          {t("checkout.addons")}
+        </h3>
+        <span className="text-[11px] font-medium text-[#8a9caf]">
+          {t("pricing.addonHintPrefix")} <Price amount={ADDON_PRICE} />{" "}
+          {t("pricing.perMonth")}
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {ADDON_SERVICES.map((service) => {
+          const isOn = selected.includes(service);
+          return (
+            <button
+              key={service}
+              type="button"
+              aria-pressed={isOn}
+              onClick={() => onToggle(service)}
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+                isOn
+                  ? "border-[#087fbb] bg-[#f2fbff] text-[#14284f]"
+                  : "border-[#dfeaf5] bg-white text-[#53627a] hover:border-[#bcd9ea]",
+              )}>
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className={cn(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
+                    isOn
+                      ? "border-[#087fbb] bg-[#087fbb] text-white"
+                      : "border-[#c9d8e5] bg-white",
+                  )}>
+                  {isOn && <Check className="h-3 w-3" aria-hidden="true" />}
+                </span>
+                <span className="truncate">
+                  {t(serviceMeta(service).nameKey)}
+                </span>
+              </span>
+              <span
+                dir="ltr"
+                className="shrink-0 text-[11px] text-[#087fbb]">
+                + <Price amount={ADDON_PRICE} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -163,10 +208,7 @@ function ReceiptRow({
       <dt className="text-[#687a91]">{label}</dt>
       <dd
         dir={ltr ? "ltr" : undefined}
-        className={cn(
-          "font-semibold text-[#14284f]",
-          ltr && "tracking-wide",
-        )}>
+        className={cn("font-semibold text-[#14284f]", ltr && "tracking-wide")}>
         {value}
       </dd>
     </div>
@@ -183,7 +225,6 @@ function PaymentSuccess({
   onLogin: () => void;
 }) {
   const { t } = useTranslation();
-  const bundle = getBundle(pass.bundleId);
 
   return (
     <div className="text-center" role="status" aria-live="polite">
@@ -198,8 +239,22 @@ function PaymentSuccess({
       </p>
 
       <dl className="mt-6 space-y-2.5 rounded-xl border border-[#dfeaf5] bg-[#f7fbff] p-4 text-start text-sm">
-        <ReceiptRow label={t("checkout.plan")} value={t(`bundle.${bundle.id}.name`)} />
-        <ReceiptRow label={t("checkout.total")} value={<Price amount={pass.amount} />} />
+        <ReceiptRow
+          label={t("checkout.plan")}
+          value={t(`plan.${pass.plan}.name`)}
+        />
+        {pass.plan === "partial" && pass.services.length > 0 && (
+          <ReceiptRow
+            label={t("checkout.services")}
+            value={pass.services
+              .map((service) => t(serviceMeta(service).nameKey))
+              .join(" · ")}
+          />
+        )}
+        <ReceiptRow
+          label={t("checkout.total")}
+          value={<Price amount={pass.amount} />}
+        />
         <ReceiptRow label={t("checkout.reference")} value={pass.reference} ltr />
         <ReceiptRow
           label={t("checkout.validUntil")}
@@ -227,7 +282,7 @@ function PaymentSuccess({
 /**
  * Demo payment gate: it validates and formats a card, waits, then writes a
  * local subscription pass. Nothing is charged and no request leaves the
- * browser — the pass is what unlocks `/login`.
+ * browser — the pass is what unlocks `/login` and, service by service, the app.
  */
 export default function Checkout() {
   const { t } = useTranslation();
@@ -235,45 +290,46 @@ export default function Checkout() {
   const search = useSearch();
 
   const params = new URLSearchParams(search);
-  const bundle = getBundle(params.get("bundle"));
+  const planParam = params.get("plan");
+  const plan: PlanId = isPlanId(planParam) ? planParam : DEFAULT_PLAN_ID;
   const billingParam = params.get("billing");
   const billing: BillingCycle = isBillingCycle(billingParam)
     ? billingParam
     : "monthly";
-  const price = bundlePrice(bundle, billing);
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [selected, setSelected] = useState<ServiceId[]>(() => {
+    const raw = (params.get("services") ?? "").split(",").filter(isServiceId);
+    return [...new Set(raw)];
+  });
+
+  const addons = plan === "partial" ? selected : [];
+  const price = planPrice(plan, addons, billing);
+
   const [paidPass, setPaidPass] = useState<AccessPass | null>(null);
   const [existingPass] = useState<AccessPass | null>(() => {
     const stored = readAccessPass();
     return isAccessPassActive(stored) ? stored : null;
   });
 
-  const form = useForm<CheckoutValues>({
-    resolver: zodResolver(checkoutSchema(t)),
-    defaultValues: { cardName: "", cardNumber: "", expiry: "", cvv: "" },
-  });
+  const toggleAddon = (service: ServiceId) => {
+    setSelected((current) =>
+      current.includes(service)
+        ? current.filter((id) => id !== service)
+        : [...current, service],
+    );
+  };
 
-  const onPay = async (values: CheckoutValues) => {
-    setIsProcessing(true);
-
-    // Stand-in for the payment provider round trip.
-    await new Promise((resolve) => window.setTimeout(resolve, 1500));
-
-    const paidAt = new Date();
-    const pass: AccessPass = {
-      reference: createPassReference(),
-      bundleId: bundle.id,
+  const onPay = (card: CardDetails) => {
+    const pass = createPass({
+      plan,
+      services: addons,
       billing,
       amount: price,
-      cardLast4: onlyDigits(values.cardNumber).slice(-4),
-      paidAt: paidAt.toISOString(),
-      expiresAt: billingExpiry(paidAt, billing).toISOString(),
-    };
+      cardLast4: card.last4,
+    });
 
     saveAccessPass(pass);
     setPaidPass(pass);
-    setIsProcessing(false);
   };
 
   return (
@@ -299,7 +355,12 @@ export default function Checkout() {
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
-            <OrderSummary bundle={bundle} billing={billing} price={price} />
+            <OrderSummary
+              plan={plan}
+              billing={billing}
+              selected={addons}
+              price={price}
+            />
 
             <div className="rounded-2xl border border-[#dfeaf5] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(20,70,110,.5)] sm:p-8">
               {paidPass ? (
@@ -329,6 +390,10 @@ export default function Checkout() {
                     </div>
                   )}
 
+                  {plan === "partial" && (
+                    <AddonPicker selected={selected} onToggle={toggleAddon} />
+                  )}
+
                   <h2 className="flex items-center gap-2 text-base font-bold tracking-[-0.01em] text-[#14284f]">
                     <CreditCard
                       className="h-4 w-4 text-[#087fbb]"
@@ -336,147 +401,15 @@ export default function Checkout() {
                     />
                     {t("checkout.payment")}
                   </h2>
-                  <p className="mt-1 text-[11px] font-medium text-[#8a9caf]">
+                  <p className="mt-1 mb-5 text-[11px] font-medium text-[#8a9caf]">
                     {t("checkout.accepted")}
                   </p>
 
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit(onPay)}
-                      className="mt-5 space-y-4"
-                      aria-busy={isProcessing}>
-                      <FormField
-                        control={form.control}
-                        name="cardName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t("checkout.cardName")}</FormLabel>
-                            <FormControl>
-                              <Input
-                                autoComplete="cc-name"
-                                placeholder={t("checkout.cardNamePlaceholder")}
-                                disabled={isProcessing}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  <CardForm amount={price} onPay={onPay} />
 
-                      <FormField
-                        control={form.control}
-                        name="cardNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t("checkout.cardNumber")}</FormLabel>
-                            <FormControl>
-                              <Input
-                                dir="ltr"
-                                inputMode="numeric"
-                                autoComplete="cc-number"
-                                placeholder="4242 4242 4242 4242"
-                                className="rtl:text-right"
-                                disabled={isProcessing}
-                                name={field.name}
-                                ref={field.ref}
-                                value={field.value}
-                                onBlur={field.onBlur}
-                                onChange={(event) =>
-                                  field.onChange(
-                                    formatCardNumber(event.target.value),
-                                  )
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <FormField
-                          control={form.control}
-                          name="expiry"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("checkout.expiry")}</FormLabel>
-                              <FormControl>
-                                <Input
-                                  dir="ltr"
-                                  inputMode="numeric"
-                                  autoComplete="cc-exp"
-                                  placeholder="MM/AA"
-                                  className="rtl:text-right"
-                                  disabled={isProcessing}
-                                  name={field.name}
-                                  ref={field.ref}
-                                  value={field.value}
-                                  onBlur={field.onBlur}
-                                  onChange={(event) =>
-                                    field.onChange(
-                                      formatExpiry(event.target.value),
-                                    )
-                                  }
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="cvv"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("checkout.cvv")}</FormLabel>
-                              <FormControl>
-                                <Input
-                                  dir="ltr"
-                                  inputMode="numeric"
-                                  autoComplete="cc-csc"
-                                  placeholder="123"
-                                  maxLength={4}
-                                  className="rtl:text-right"
-                                  disabled={isProcessing}
-                                  {...field}
-                                  onChange={(event) =>
-                                    field.onChange(
-                                      onlyDigits(event.target.value).slice(0, 4),
-                                    )
-                                  }
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Button
-                        type="submit"
-                        disabled={isProcessing}
-                        className="h-11 w-full bg-[#087fbb] text-sm text-white shadow-none hover:bg-[#066c9f]">
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            {t("checkout.paying")}
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="h-4 w-4" />
-                            {t("checkout.pay")} <Price amount={price} />
-                          </>
-                        )}
-                      </Button>
-
-                      <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-[#8a9caf]">
-                        <Lock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                        {t("checkout.secure")}
-                      </p>
-                    </form>
-                  </Form>
+                  <div className="mt-6 border-t border-[#eef4f9] pt-5">
+                    <TrialCta appearance="link" />
+                  </div>
                 </>
               )}
             </div>

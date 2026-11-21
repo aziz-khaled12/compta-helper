@@ -10,7 +10,6 @@ import { RecentActivity } from "./components/RecentActivity";
 import { SummaryCards } from "./components/SummaryCards";
 import { StockPreview } from "./components/StockPreview";
 import { LegalAlertsCard } from "./components/LegalAlertsCard";
-import { FeedbackCard } from "./components/FeedbackCard";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -48,7 +47,6 @@ export default function Dashboard() {
       <SummaryCards state={state} />
       <LegalAlertsCard />
       <StockPreview />
-      <FeedbackCard />
     </div>
   );
 }

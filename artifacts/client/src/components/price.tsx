@@ -1,4 +1,4 @@
-import { priceLabel } from "@/lib/bundles";
+import { priceLabel } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 /**

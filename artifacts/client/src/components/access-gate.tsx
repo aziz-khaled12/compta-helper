@@ -1,4 +1,4 @@
-import { CheckCircle2, LockKeyhole } from "lucide-react";
+import { CheckCircle2, LockKeyhole, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -9,16 +9,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatPassDate, type AccessPass } from "@/lib/access-pass";
+import { TrialCta } from "@/components/pricing/trial-cta";
+import {
+  daysLeft as passDaysLeft,
+  formatPassDate,
+  hasUsedTrial,
+  isAccessPassActive,
+  readAccessPass,
+  type AccessPass,
+} from "@/lib/access-pass";
 
 const STEPS = ["gate.step1", "gate.step2", "gate.step3"] as const;
 
 /**
  * Shown instead of the login/register tabs while no active subscription pass
- * exists. Paying is the only way in — that is the whole point of the gate.
+ * exists. Paying — or starting the free week — is the only way in, which is
+ * the whole point of the gate.
  */
 export function AccessGate() {
   const { t } = useTranslation();
+  // A used trial (or a pass this tab has not seen yet) leaves the plans as the
+  // only way in, so the divider above them would dangle.
+  const trialAvailable =
+    !hasUsedTrial() && !isAccessPassActive(readAccessPass());
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(circle_at_15%_10%,hsl(var(--landing-cyan)/.16),transparent_34%),hsl(var(--background))] p-6">
@@ -56,11 +69,26 @@ export function AccessGate() {
               ))}
             </ol>
 
-            <Button
-              asChild
-              className="h-11 w-full bg-[#087fbb] text-sm text-white shadow-none hover:bg-[#066c9f]">
-              <Link href="/pricing">{t("gate.cta")}</Link>
-            </Button>
+            <div className="space-y-3">
+              <TrialCta className="w-full" />
+
+              {trialAvailable && (
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {t("gate.or")}
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              )}
+
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 w-full text-sm">
+                <Link href="/pricing">{t("gate.cta")}</Link>
+              </Button>
+            </div>
 
             <Link
               href="/"
@@ -81,16 +109,30 @@ export function AccessGate() {
 /** Receipt strip shown above the login card once a pass is active. */
 export function PassBanner({ pass }: { pass: AccessPass }) {
   const { t } = useTranslation();
+  const remaining = passDaysLeft(pass);
 
   return (
     <div className="rounded-xl border border-[#cbe9d8] bg-[#edf9f2] p-4">
-      <p className="flex items-center gap-2 text-sm font-semibold text-[#0f7a52]">
+      <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#0f7a52]">
         <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
         {t("gate.activeTitle")}
+        {pass.trial && (
+          <span className="rounded-full bg-[#fdf3dd] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#a97812]">
+            {t("trial.badge")}
+          </span>
+        )}
       </p>
       <p className="mt-1.5 text-xs leading-5 text-[#2f6f57]">
-        {t("gate.activeDesc", { bundle: t(`bundle.${pass.bundleId}.name`) })}
+        {t("gate.activeDesc", { plan: t(`plan.${pass.plan}.name`) })}
       </p>
+      {pass.trial && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[#a97812]">
+          <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {remaining === 1
+            ? t("trial.dayLeft")
+            : t("trial.daysLeft", { count: remaining })}
+        </p>
+      )}
       <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-[11px] text-[#2f6f57]">
         <div>
           <dt className="opacity-70">{t("gate.reference")}</dt>

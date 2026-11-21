@@ -15,7 +15,8 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { toggleLanguage } from "@/i18n";
 import { PublicHeader } from "@/components/public-header";
-import { BundleCards } from "@/components/pricing/bundle-cards";
+import { PlanCards } from "@/components/pricing/plan-cards";
+import { TrialBand, TrialCta } from "@/components/pricing/trial-cta";
 import { Button } from "@/components/ui/button";
 import { CONTACT_EMAIL } from "@/lib/site";
 
@@ -168,6 +169,9 @@ export default function Landing() {
           <p className="mt-4 text-[10px] text-[#8a9caf]">
             {t("landing.heroMeta")}
           </p>
+          <div className="mt-2">
+            <TrialCta appearance="link" />
+          </div>
         </div>
 
         <div className="relative z-10 mx-auto mt-14 max-w-[1080px] sm:mt-20">
@@ -238,7 +242,8 @@ export default function Landing() {
           </div>
 
           <div className="mt-12">
-            <BundleCards />
+            <TrialBand />
+            <PlanCards />
           </div>
 
           <p className="mt-10 text-center text-xs text-[#8a9caf]">
